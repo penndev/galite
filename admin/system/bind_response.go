@@ -1,6 +1,6 @@
 package system
 
 type bindCaptcha struct {
-	ID  string `json:"id"`
-	Img string `json:"img"`
+	CaptchaID  string `json:"captchaID"`
+	CaptchaURL string `json:"captchaURL"`
 }

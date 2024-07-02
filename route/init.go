@@ -15,6 +15,9 @@ func Init() *gin.Engine {
 	engine.Use(middle.Logger(config.Logger))
 	engine.Use(middle.Recovery(config.Logger))
 
+	//
+	engine.Use(middle.CORS())
+
 	admin.InitAdminRoute(engine.Group("/admin"))
 
 	engine.GET("/ping", func(ctx *gin.Context) {

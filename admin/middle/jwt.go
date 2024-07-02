@@ -18,7 +18,7 @@ func JWTAuth(jwtSecret []byte) gin.HandlerFunc {
 		}
 		return jwtSecret, nil
 	}
-	// auth func
+	// auth
 	return func(c *gin.Context) {
 		tokenStr := c.Request.Header.Get("x-token")
 		if tokenStr == "" {
@@ -29,6 +29,7 @@ func JWTAuth(jwtSecret []byte) gin.HandlerFunc {
 		// token 验证包含了 expired
 		token, err := jwt.Parse(tokenStr, keyFunc)
 		if err != nil || !token.Valid {
+			// config.Logger.Warn("验证登录失败", zap.Error(err))
 			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "登录验证失败02"})
 			c.Abort()
 			return

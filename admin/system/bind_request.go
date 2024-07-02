@@ -1,9 +1,28 @@
 package system
 
+import (
+	"github.com/penndev/wga/model/sugar"
+	"github.com/penndev/wga/model/system"
+)
+
 // 用户登录请求体
 type bindLoginInput struct {
-	Username  string // 用户名
-	Password  string // 密码
-	Captcha   string // 验证码
-	CaptchaId string // 验证码ID
+	Username  string `binding:"required,min=4,max=64"`   // 用户名
+	Password  string `binding:"required,min=6,max=64"`   // 密码
+	Captcha   string `binding:"required,alphanum,len=4"` // 验证码
+	CaptchaId string `binding:"required,uuid"`           // 验证码ID
+}
+
+// 获取用户列表
+type bindSystemUserParam struct {
+	sugar.BindListParam
+	Name string `form:"name" binding:"omitempty,min=4,max=64"`
+}
+
+func (b *bindSystemUserParam) Param() *system.SysUser {
+	m := &system.SysUser{
+		Name: b.Name,
+	}
+	m.Bind(m, b, nil)
+	return m
 }

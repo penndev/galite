@@ -2,6 +2,7 @@ package system
 
 import (
 	"errors"
+	"log"
 	"net/http"
 	"time"
 
@@ -21,23 +22,28 @@ import (
 func Captcha(c *gin.Context) {
 	vd, err := captcha.NewImg()
 	if err != nil {
-		config.Logger.Warn("Captcha", zap.Error(err))
+		config.Logger.Error("Captcha", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "获取验证码出错"})
 		return
 	}
 	c.JSON(http.StatusOK, bindCaptcha{
-		ID:  vd.ID,
-		Img: vd.PngBase64,
+		CaptchaID:  vd.ID,
+		CaptchaURL: vd.PngBase64,
 	})
 }
 
 func Login(c *gin.Context) {
 	var request bindLoginInput
-	c.ShouldBindJSON(&request)
+	if err := c.ShouldBindJSON(&request); err != nil {
+		config.Logger.Warn("登录失败", zap.Error(err))
+		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		return
+	}
+
 	// 创建验证码
 	if !captcha.Verify(request.CaptchaId, request.Captcha) {
 		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "验证码错误"})
-		// return
+		return
 	}
 	res, err := system.GetSysUserByName(request.Username)
 	if err != nil {
@@ -64,14 +70,15 @@ func Login(c *gin.Context) {
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": request.Username,
-		"exp": jwt.NewNumericDate(time.Now())}).SignedString([]byte(config.JWTSecret))
+		"exp": jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour))}).SignedString([]byte(config.JWTSecret))
 	if err != nil {
 		config.Logger.Error("用户登录失败", zap.Error(err))
 		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "用户登录失败(jwt签名错误)"})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{
-		"token": token,
+		"token":  token,
+		"routes": "*", //前端菜单解决方案
 	})
 }
 
@@ -89,3 +96,18 @@ func Login(c *gin.Context) {
 // 	})
 // 	return
 // }
+
+func SystemUserList(c *gin.Context) {
+	param := &bindSystemUserParam{}
+	if err := c.BindQuery(&param); err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		return
+	}
+	var total int64
+	var list []system.SysUser
+
+	m := param.Param() //处理筛选
+	m.List(&total, &list)
+	c.JSON(http.StatusOK, bind.DataList{Total: total, List: list})
+}

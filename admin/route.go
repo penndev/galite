@@ -11,7 +11,7 @@ import (
 func InitAdminRoute(r *gin.RouterGroup) {
 	r.GET("/captcha", system.Captcha) //后台登录验证码
 	r.POST("/login", system.Login)    //后台登录验证码
-	r.GET("/ping", middle.JWTAuth(config.JWTSecret), func(ctx *gin.Context) {
-		ctx.String(200, "pong")
-	})
+
+	r.Use(middle.JWTAuth(config.JWTSecret))
+	r.GET("/system/admin", system.SystemUserList)
 }

@@ -2,12 +2,11 @@ package system
 
 import (
 	"github.com/penndev/wga/config"
-
-	"gorm.io/gorm"
+	"github.com/penndev/wga/model/sugar"
 )
 
 type SysUser struct {
-	gorm.Model
+	sugar.Model
 	Name     string
 	Password string `json:"-"`
 	RoleID   uint
