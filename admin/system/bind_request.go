@@ -3,6 +3,7 @@ package system
 import (
 	"github.com/penndev/wga/model/sugar"
 	"github.com/penndev/wga/model/system"
+	"gorm.io/gorm"
 )
 
 // 用户登录请求体
@@ -23,6 +24,9 @@ func (b *bindSystemUserParam) Param() *system.SysUser {
 	m := &system.SysUser{
 		Name: b.Name,
 	}
-	m.Bind(m, b, nil)
+	w := func(orm *gorm.DB) *gorm.DB {
+		return orm.Where(m)
+	}
+	m.Bind(m, w, b)
 	return m
 }

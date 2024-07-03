@@ -7,10 +7,10 @@ import (
 
 type SysUser struct {
 	sugar.Model
-	Name     string
+	Name     string `json:"name"`
 	Password string `json:"-"`
-	RoleID   uint
-	Remark   string
+	RoleID   uint   `json:"roleId"`
+	Remark   string `json:"remark"`
 }
 
 func GetSysUserByName(name string) (SysUser, error) {
