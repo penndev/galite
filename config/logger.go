@@ -59,5 +59,5 @@ func initLoger() {
 		}
 	}
 
-	Logger.Warn("WGA Starting")
+	Logger.Info("WGA Starting")
 }

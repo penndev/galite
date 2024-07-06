@@ -15,17 +15,54 @@ type bindLoginInput struct {
 }
 
 // 获取用户列表
-type bindSystemUserParam struct {
+type bindSystemAdminParam struct {
 	sugar.BindListParam
-	Name string `form:"name" binding:"omitempty,min=4,max=64"`
+	Email string `form:"email" binding:"omitempty,min=4,max=64"`
 }
 
-func (b *bindSystemUserParam) Param() *system.SysUser {
-	m := &system.SysUser{
-		Name: b.Name,
+// 处理列表请求数据。
+func (b *bindSystemAdminParam) Param() *system.SysAdmin {
+	m := &system.SysAdmin{
+		Email: b.Email,
+	}
+	w := func(orm *gorm.DB) *gorm.DB {
+		return orm.Where(m).Preload("AdminRole", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, name")
+		})
+	}
+	m.Bind(m, w, b)
+	return m
+}
+
+// 获取权限列表
+type bindSystemRoleParam struct {
+	sugar.BindListParam
+	Status uint8 `form:"status" binding:"omitempty,min=0,max=1"`
+}
+
+func (b *bindSystemRoleParam) Param() *system.SysRole {
+	m := &system.SysRole{
+		Status: b.Status,
 	}
 	w := func(orm *gorm.DB) *gorm.DB {
 		return orm.Where(m)
+	}
+	m.Bind(m, w, b)
+	return m
+}
+
+// 获取访问日志列表
+type bindSysAccessParam struct {
+	sugar.BindListParam
+}
+
+// 处理列表请求数据。
+func (b *bindSysAccessParam) Param() *system.SysAccessLog {
+	m := &system.SysAccessLog{}
+	w := func(orm *gorm.DB) *gorm.DB {
+		return orm.Where(m).Preload("SysAdmin", func(db *gorm.DB) *gorm.DB {
+			return db.Select("id, email")
+		})
 	}
 	m.Bind(m, w, b)
 	return m

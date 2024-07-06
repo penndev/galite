@@ -5,6 +5,6 @@ type ErrorMessage struct {
 }
 
 type DataList struct {
-	Total int64
-	List  any
+	Total int64 `json:"total"`
+	Data  any   `json:"data"`
 }

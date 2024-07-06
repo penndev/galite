@@ -7,5 +7,7 @@ import (
 
 // 注册表结构。
 func Migration() {
-	config.DB.AutoMigrate(system.SysUser{})
+	config.DB.AutoMigrate(&system.SysAdmin{})
+	config.DB.AutoMigrate(&system.SysRole{})
+	config.DB.AutoMigrate(&system.SysAccessLog{})
 }
