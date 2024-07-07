@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/http/httputil"
 	"strconv"
 	"time"
 
@@ -93,45 +94,83 @@ func Login(c *gin.Context) {
 	}
 }
 
-// 用户菜单鉴权
-func Role(c *gin.Context) {
-	admin, err := system.SysAdminGetByID(c.GetString("jwtAuth"))
-	if err != nil {
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败"})
-		c.Abort()
+func ChangePasswd(c *gin.Context) {
+	var request bindChangePasswdInput
+	if err := c.ShouldBindJSON(&request); err != nil {
+		config.Logger.Warn("修改失败", zap.Error(err))
+		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
 		return
 	}
-	// log.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", admin.SysRoleID)
-	if admin.SysRoleID != 0 {
-		routes := admin.SysRole.Route
-		pass := false
-		for _, route := range routes {
-			if route.Method == c.Request.Method && route.Path == c.Request.URL.Path {
-				pass = true
-				break
-			}
-		}
+	res, err := system.SysAdminGetByID(c.GetString("jwtAuth"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "修改失败" + err.Error()})
+		return
+	}
+	if bcrypt.CompareHashAndPassword([]byte(res.Passwd), []byte(request.Passwd)) != nil {
+		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "旧的用户密码错误"})
+		return
+	}
 
-		if !pass {
+	pwd, err := bcrypt.GenerateFromPassword([]byte(request.NewPasswd), bcrypt.MinCost)
+	if err != nil {
+		config.Logger.Error("创建管理员密码失败", zap.Error(err))
+		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "创建密码失败"})
+		return
+	}
+	res.Passwd = string(pwd)
+	res.Bind(res)
+	res.Update(res)
+	c.JSON(http.StatusOK, bind.ErrorMessage{Message: "修改完成"})
+}
+
+// 用户菜单鉴权
+func Role(isLog bool) gin.HandlerFunc {
+
+	return func(c *gin.Context) {
+		admin, err := system.SysAdminGetByID(c.GetString("jwtAuth"))
+		if err != nil {
 			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败"})
 			c.Abort()
 			return
 		}
-	}
-	// 记录日志
-	access := &system.SysAccessLog{
-		SysAdminID: admin.ID,
-		Method:     c.Request.Method,
-		Path:       fmt.Sprint(c.Request.URL),
-		IP:         c.ClientIP(),
-	}
-	access.Bind(access)
-	if err := access.Create(access); err != nil {
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "日志记录失败:" + err.Error()})
-		c.Abort()
-		return
-	}
+		// log.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", admin.SysRoleID)
+		if admin.SysRoleID != 0 {
+			routes := admin.SysRole.Route
+			pass := false
+			for _, route := range routes {
+				if route.Method == c.Request.Method && route.Path == c.Request.URL.Path {
+					pass = true
+					break
+				}
+			}
 
+			if !pass {
+				c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败"})
+				c.Abort()
+				return
+			}
+		}
+
+		if isLog { // 记录日志
+			access := &system.SysAccessLog{
+				SysAdminID: admin.ID,
+				Method:     c.Request.Method,
+				Path:       fmt.Sprint(c.Request.URL),
+				IP:         c.ClientIP(),
+			}
+			access.Bind(access)
+			if err := access.Create(access); err != nil {
+				c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "日志记录失败:" + err.Error()})
+				c.Abort()
+				return
+			}
+			c.Next()
+			httpRequest, _ := httputil.DumpRequest(c.Request, false)
+			access.Payload = string(httpRequest)
+			access.Status = c.Writer.Status()
+			access.Update(access)
+		}
+	}
 }
 
 func AccessLog(c *gin.Context) {
@@ -182,8 +221,7 @@ func AdminList(c *gin.Context) {
 func AdminAdd(c *gin.Context) {
 	param := &system.SysAdmin{}
 	if err := c.BindJSON(&param); err != nil {
-		log.Println(err)
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误" + err.Error()})
 		return
 	}
 	param.Bind(param)
@@ -192,6 +230,7 @@ func AdminAdd(c *gin.Context) {
 		if err != nil {
 			config.Logger.Error("创建管理员密码失败", zap.Error(err))
 			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "初始化管理员失败，请查看错误日志"})
+			return
 		}
 		param.Passwd = string(str)
 	}

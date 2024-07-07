@@ -14,6 +14,12 @@ type bindLoginInput struct {
 	CaptchaId string `binding:"required,uuid"`           // 验证码ID
 }
 
+// 用户改密请求体
+type bindChangePasswdInput struct {
+	Passwd    string `binding:"required,min=6,max=64"` // 密码
+	NewPasswd string `binding:"required,min=6,max=64"` // 密码
+}
+
 // 获取用户列表
 type bindSystemAdminParam struct {
 	sugar.BindListParam
@@ -26,7 +32,7 @@ func (b *bindSystemAdminParam) Param() *system.SysAdmin {
 		Email: b.Email,
 	}
 	w := func(orm *gorm.DB) *gorm.DB {
-		return orm.Where(m).Preload("AdminRole", func(db *gorm.DB) *gorm.DB {
+		return orm.Where(m).Preload("SysRole", func(db *gorm.DB) *gorm.DB {
 			return db.Select("id, name")
 		})
 	}

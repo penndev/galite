@@ -13,7 +13,8 @@ func InitAdminRoute(r *gin.RouterGroup) {
 	r.POST("/login", system.Login)    //后台登录验证码
 
 	r.Use(middle.JWTAuth(config.JWTSecret))
-	route := middle.NewRoleRouter(r, system.Role)
+	r.PUT("/changepasswd", system.ChangePasswd) //后台登录验证码
+	route := middle.NewRoleRouter(r, system.Role(false))
 	// 后台脚手架鉴权控制功能
 	route.GET("/system/admin", system.AdminList)
 	route.POST("/system/admin", system.AdminAdd)
