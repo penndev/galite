@@ -1,3 +1,3 @@
 # WGA
-> web (golang gin gorm) (admin api application) goalng初始化模板脚手架
+> web后端项目 后台管理脚手架功能。 项目使用 gin gorm zap等框架，以来mariadb与redis
 

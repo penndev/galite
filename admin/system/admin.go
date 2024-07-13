@@ -61,7 +61,9 @@ func Login(c *gin.Context) {
 			} else {
 				res.Passwd = string(str)
 				res.Bind(res)
-				res.Create(&res)
+				if err = res.Create(&res); err != nil {
+					msg = "初始化管理员失败，请查看错误日志(1)"
+				}
 			}
 		}
 		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: msg})
