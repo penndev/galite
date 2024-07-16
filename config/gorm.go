@@ -117,7 +117,10 @@ func initGorm() {
 		IgnoreRecordNotFoundError: true,
 	}
 
-	dataBase, err := gorm.Open(mysql.Open(os.Getenv("MYSQL_DSN")), &gorm.Config{Logger: gl})
+	dataBase, err := gorm.Open(mysql.Open(os.Getenv("MYSQL_DSN")), &gorm.Config{
+		Logger:                                   gl,   // 重写日志
+		DisableForeignKeyConstraintWhenMigrating: true, // 禁止物理外键约束
+	})
 	if err != nil {
 		log.Panic(err)
 	}
