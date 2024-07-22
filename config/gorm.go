@@ -80,7 +80,7 @@ func (l *gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	}
 }
 
-func (l *gormLogger) logger(ctx context.Context) *zap.Logger {
+func (l *gormLogger) logger(_ context.Context) *zap.Logger {
 	for i := 2; i < 15; i++ {
 		_, file, _, ok := runtime.Caller(i)
 		switch {
