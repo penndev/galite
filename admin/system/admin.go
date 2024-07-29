@@ -54,7 +54,7 @@ func Login(c *gin.Context) {
 		if request.Username == "admin" && errors.Is(err, logger.ErrRecordNotFound) {
 			msg = "已初始化管理员，请再次点击登录"
 			res.Email = request.Username
-			str, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.MinCost)
+			str, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 			if err != nil {
 				config.Logger.Error("初始化管理员失败", zap.Error(err))
 				msg = "初始化管理员失败，请查看错误日志"
@@ -113,7 +113,7 @@ func ChangePasswd(c *gin.Context) {
 		return
 	}
 
-	pwd, err := bcrypt.GenerateFromPassword([]byte(request.NewPasswd), bcrypt.MinCost)
+	pwd, err := bcrypt.GenerateFromPassword([]byte(request.NewPasswd), bcrypt.DefaultCost)
 	if err != nil {
 		config.Logger.Error("创建管理员密码失败", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "创建密码失败"})

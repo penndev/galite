@@ -20,7 +20,7 @@ func InitAdminRoute(r *gin.RouterGroup) {
 	route.POST("/system/admin", system.AdminAdd)
 	route.PUT("/system/admin", system.AdminUpdate)
 	route.DELETE("/system/admin", system.AdminDelete)
-	route.GET("/system/admin/accesslog", system.AccessLog)
+	route.GET("/system/admin/access-log", system.AccessLog)
 	route.GET("/system/role", system.RoleList)
 	route.POST("/system/role", system.RoleAdd)
 	route.PUT("/system/role", system.RoleUpdate)
