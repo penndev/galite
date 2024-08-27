@@ -1,7 +1,6 @@
 package sugar
 
 import (
-	"log"
 	"time"
 
 	"github.com/penndev/wga/config"
@@ -43,7 +42,7 @@ func (m *Model) List(t *int64, l any) error {
 	}
 	if m.bindParam != nil { //数据库穿透攻击，上游处理
 		//  count 可以被db缓存，实际查询不会，如果limit offset 超过 count 则进行何种操作?
-		log.Println(m.bindParam.Order(), m.bindParam.Offset(), m.bindParam.Limit())
+		// log.Println(m.bindParam.Order(), m.bindParam.Offset(), m.bindParam.Limit())
 		query = query.Order(m.bindParam.Order()).Offset(m.bindParam.Offset()).Limit(m.bindParam.Limit())
 	}
 	if err := query.Find(l).Error; err != nil {
