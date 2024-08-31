@@ -44,7 +44,7 @@ func JWTAuth(jwtSecret []byte) gin.HandlerFunc {
 
 		sub, ok := claims["sub"]
 		if !ok {
-			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "登录验证失败03"})
+			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "登录验证失败04"})
 			c.Abort()
 			return
 		}

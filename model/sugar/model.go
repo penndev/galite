@@ -21,11 +21,10 @@ type Model struct {
 // Bind 方法绑定模型和可选参数。
 //
 // 参数:
-//   - bindModel (*Model any): 要绑定的模型对象, any方便反射。
-//   - param ...any: 可选参数，最多接受两个参数:
-//     1. 如果存在第一个参数且类型为 `func(*gorm.DB) *gorm.DB`，则设置 `m.bindScopes` 用于SQLScopes
-//     2. 如果存在第二个参数且类型为 `BindParam`，则设置 `m.bindParam` 用于分页和排序处理封装。
-func (m *Model) Bind(bindModel any, param ...any) {
+//   - m.bindModel [*Model]: 要绑定的模型对象, 用于反射。
+//   - m.bindScopes [`func(*gorm.DB) *gorm.DB`]: 函数参数gorm条件注入。
+//   - m.bindParam  [`BindParam`]: 用于分页和排序处理封装。
+func (m *Model) Bind(bindModel any, param ...any) *gorm.DB {
 	m.bindModel = bindModel
 	if len(param) >= 1 {
 		if item, ok := param[0].(func(*gorm.DB) *gorm.DB); ok {
@@ -37,6 +36,7 @@ func (m *Model) Bind(bindModel any, param ...any) {
 			m.bindParam = item //设置分页排序
 		}
 	}
+	return m.Gorm()
 }
 
 // 返回经过条件绑定的原生gorm
