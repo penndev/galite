@@ -24,7 +24,7 @@ func NewLogger(logFileName string) (*lumberjack.Logger, error) {
 	return lumberjackLogger, err
 }
 
-func initLoger() {
+func initLogger() {
 
 	if gin.Mode() == gin.ReleaseMode {
 		// 初始化日志

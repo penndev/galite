@@ -6,19 +6,14 @@ import (
 	"os"
 	"time"
 
-	"github.com/penndev/wga/config"
-	"github.com/penndev/wga/model"
-	"github.com/penndev/wga/route"
+	"github.com/penndev/galite/config"
+	"github.com/penndev/galite/model"
+	"github.com/penndev/galite/route"
 )
 
 func main() {
-	/**
-	 * 初始化所有配置
-	 * zap日志 config.Logger
-	 * gorm连接池实例 config.DB
-	 * redis连接池实例 config.Redis
-	 */
 	config.Init()
+
 	defer config.Defer()
 	model.Migration()
 

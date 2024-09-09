@@ -11,7 +11,7 @@ import (
 )
 
 // JWT签名密钥
-var JWTSecret []byte
+// var JWTSecret []byte
 
 // 日志实例
 var Logger *zap.Logger
@@ -20,21 +20,30 @@ var Logger *zap.Logger
 var Redis *redis.Client
 
 // DB 数据库链接单例
-var DB *gorm.DB
+var Gorm *gorm.DB
 
-func Defer() {
-	Logger.Sync()
-}
-
-// Init 初始化配置项
+/**
+ * 初始化所有配置
+ * gin mode设置
+ * redis连接池实例 config.Redis
+ * zap日志 config.Logger
+ * gorm连接池实例 config.DB
+ */
 func Init() {
-	// 加载env
 	godotenv.Load()
-	// 设置gin.mode
-	gin.SetMode(os.Getenv("GIN_MODE"))
-	JWTSecret = []byte(os.Getenv("SECRET"))
+	if os.Getenv("APP_MODE" == "dev") {
 
-	initLoger()
+	}
+
+	gin.SetMode(os.Getenv("GIN_MODE"))
+	// JWTSecret = []byte(os.Getenv("SECRET"))
+
+	initLogger()
 	initGorm()
 	initRedis()
+}
+
+// 配置项回收
+func Defer() {
+	Logger.Sync()
 }

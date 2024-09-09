@@ -1,10 +1,11 @@
-module github.com/penndev/wga
+module github.com/penndev/galite
 
 go 1.22.4
 
 require (
 	github.com/gin-gonic/gin v1.10.0
 	github.com/joho/godotenv v1.5.1
+	github.com/penndev/wga v0.0.0-20240831071210-d3ad8ab0f267
 	gorm.io/driver/mysql v1.5.7
 	gorm.io/gorm v1.25.10
 )
