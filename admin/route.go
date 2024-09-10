@@ -1,9 +1,9 @@
 package admin
 
 import (
-	"github.com/penndev/wga/admin/middle"
-	"github.com/penndev/wga/admin/system"
-	"github.com/penndev/wga/config"
+	"github.com/penndev/galite/admin/middle"
+	"github.com/penndev/galite/admin/system"
+	"github.com/penndev/galite/config"
 
 	"github.com/gin-gonic/gin"
 )

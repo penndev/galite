@@ -1,9 +1,9 @@
 package system
 
-import "github.com/penndev/wga/model/sugar"
+import "github.com/penndev/galite/model/orm"
 
 type SysAccessLog struct {
-	sugar.Model
+	orm.Model
 	SysAdminID uint     `json:"adminId"`
 	SysAdmin   SysAdmin `json:"AdminUser"`
 	Method     string   `json:"method"`

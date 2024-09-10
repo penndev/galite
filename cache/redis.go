@@ -1,19 +1,17 @@
-package config
+package cache
 
 import (
 	"context"
-	"errors"
 	"log"
-	"os"
 
 	"github.com/redis/go-redis/v9"
 )
 
-func initRedis() {
-	if os.Getenv("REDIS_DSN") == "" {
-		log.Panic(errors.New("REDIS_DSN .env not found"))
-	}
-	opt, err := redis.ParseURL("redis://" + os.Getenv("REDIS_DSN"))
+// Redis实例
+var Redis *redis.Client
+
+func InitRedis(redisURL string) {
+	opt, err := redis.ParseURL(redisURL)
 	if err != nil {
 		log.Panic(err)
 	}

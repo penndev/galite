@@ -6,7 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/penndev/wga/admin/bind"
+	"github.com/penndev/galite/admin/bind"
 )
 
 // jwt验证用户登录

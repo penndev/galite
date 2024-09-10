@@ -1,11 +1,12 @@
-package sugar
+package orm
 
 import (
 	"time"
 
-	"github.com/penndev/wga/config"
 	"gorm.io/gorm"
 )
+
+var DB *gorm.DB
 
 type Model struct {
 	ID        uint           `gorm:"primaryKey" json:"id"`
@@ -41,7 +42,7 @@ func (m *Model) Bind(bindModel any, param ...any) *gorm.DB {
 
 // 返回经过条件绑定的原生gorm
 func (m *Model) Gorm() *gorm.DB {
-	query := config.DB.Model(m.bindModel)
+	query := DB.Model(m.bindModel)
 	if m.bindScopes != nil {
 		query = query.Scopes(m.bindScopes)
 	}
@@ -54,7 +55,7 @@ func (m *Model) Gorm() *gorm.DB {
 // total 数据总量
 // data 结果集
 func (m *Model) List(total *int64, data any) error {
-	query := config.DB.Model(m.bindModel)
+	query := DB.Model(m.bindModel)
 	if m.bindScopes != nil {
 		query = query.Scopes(m.bindScopes)
 	}
@@ -70,28 +71,4 @@ func (m *Model) List(total *int64, data any) error {
 		return err
 	}
 	return nil
-}
-
-func (m *Model) Create(data any) error {
-	return config.DB.Model(m.bindModel).Create(data).Error
-}
-
-func (m *Model) Save(data any) error {
-	return config.DB.Model(m.bindModel).Save(data).Error
-}
-
-func (m *Model) Update(data any) error {
-	query := config.DB.Model(m.bindModel)
-	if m.bindScopes != nil {
-		query = query.Scopes(m.bindScopes)
-	}
-	return query.Updates(data).Error
-}
-
-func (m *Model) Delete(data any) error {
-	query := config.DB.Model(m.bindModel)
-	if m.bindScopes != nil {
-		query = query.Scopes(m.bindScopes)
-	}
-	return query.Delete(data).Error
 }

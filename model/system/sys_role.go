@@ -1,12 +1,12 @@
 package system
 
 import (
-	"github.com/penndev/wga/admin/middle"
-	"github.com/penndev/wga/model/sugar"
+	"github.com/penndev/galite/admin/middle"
+	"github.com/penndev/galite/model/orm"
 )
 
 type SysRole struct {
-	sugar.Model
+	orm.Model
 	Name   string             `json:"name"`
 	Status uint8              `json:"status"`
 	Menu   []string           `gorm:"serializer:json" json:"menu"`

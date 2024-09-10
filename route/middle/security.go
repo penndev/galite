@@ -16,8 +16,6 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/penndev/wga/config"
-	"go.uber.org/zap"
 )
 
 type message struct {
@@ -38,7 +36,7 @@ func (w *ginWrite) Write(body []byte) (int, error) {
 	iv := w.iv[:]
 	block, err := aes.NewCipher(key)
 	if err != nil {
-		config.Logger.Error("ginWrite", zap.Error(err))
+		// config.Logger.Error("ginWrite", zap.Error(err))
 		return 0, err
 	}
 
@@ -60,7 +58,7 @@ func (w *ginWrite) Write(body []byte) (int, error) {
 
 	jsonMsg, err := json.Marshal(m)
 	if err != nil {
-		config.Logger.Error("ginWrite", zap.Error(err))
+		// config.Logger.Error("ginWrite", zap.Error(err))
 		return 0, err
 	}
 	return w.ResponseWriter.Write(jsonMsg)
