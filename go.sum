@@ -69,8 +69,6 @@ github.com/pelletier/go-toml/v2 v2.2.2 h1:aYUidT7k73Pcl9nb2gScu7NSrKCSHIDE89b3+6
 github.com/pelletier/go-toml/v2 v2.2.2/go.mod h1:1t835xjRzz80PqgE6HHgN2JOsmgYu/h4qDAS4n929Rs=
 github.com/penndev/gopkg v0.0.0-20240626142338-64649cadb4db h1:9lGtkkoVs0MFLNM+ytgs9QqC2TxGmRmaBM6hL4ytltM=
 github.com/penndev/gopkg v0.0.0-20240626142338-64649cadb4db/go.mod h1:X9y90pzvzAh0dHhK7NCzj0LNy1P5LOsoIOoyDVfDkp0=
-github.com/penndev/wga v0.0.0-20240831071210-d3ad8ab0f267 h1:hunpx/hu0a6O9S80K/Yozjsy4+5cjaeEq84w0mF4/4M=
-github.com/penndev/wga v0.0.0-20240831071210-d3ad8ab0f267/go.mod h1:bm4QNYn5V4R+qtGSqQ7BZyKi9gq6/TWPBs4ZSVBN7Rs=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/redis/go-redis/v9 v9.5.3 h1:fOAp1/uJG+ZtcITgZOfYFmTKPE7n4Vclj1wZFgRciUU=

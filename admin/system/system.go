@@ -79,7 +79,7 @@ func Login(c *gin.Context) {
 		return
 	}
 	// 超级管理员
-	if res.SysRoleID == 0 {
+	if res.SysRoleID == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"token":  token,
 			"routes": "*", //超级管理员
@@ -122,16 +122,15 @@ func ChangePasswd(c *gin.Context) {
 
 // 用户菜单鉴权
 func Role(isLog bool) gin.HandlerFunc {
-
 	return func(c *gin.Context) {
 		admin, err := system.SysAdminGetByID(c.GetString("jwtAuth"))
 		if err != nil {
-			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败"})
+			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败(1)"})
 			c.Abort()
 			return
 		}
-		// log.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", admin.SysRoleID)
-		if admin.SysRoleID != 0 {
+		// 没设置权限则默认为超级管理员
+		if admin.SysRoleID != nil {
 			routes := admin.SysRole.Route
 			pass := false
 			for _, route := range routes {
@@ -142,7 +141,7 @@ func Role(isLog bool) gin.HandlerFunc {
 			}
 
 			if !pass {
-				c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败"})
+				c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败(2)"})
 				c.Abort()
 				return
 			}

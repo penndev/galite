@@ -45,6 +45,7 @@ var Logger *zap.Logger
 func Init() {
 	godotenv.Load(".env")
 	// 处理app启动参数
+	var err error
 	if os.Getenv("APP_MODE") != "dev" {
 		Mode = "prod"
 		if os.Getenv("DB_LOGGER_FILE") == "" {
@@ -53,7 +54,20 @@ func Init() {
 		if os.Getenv("APP_LOGGER_FILE") == "" {
 			os.Setenv("APP_LOGGER_FILE", "gin.log")
 		}
+		// GinZapLogger 只收集prod模式下的日志
+		GinZapLogger, err = ZapLogger(os.Getenv("APP_LOGGER_FILE"), ParseLogLevel(os.Getenv("DB_LOGGER_LEVEL")), 1024, 30)
+		if err != nil {
+			log.Panic(err)
+		}
+		Logger = GinZapLogger
+	} else {
+		GinZapLogger, err = zap.NewDevelopment()
+		if err != nil {
+			log.Panic(err)
+		}
+		Logger = GinZapLogger
 	}
+
 	if os.Getenv("APP_LISTEN") != "" {
 		Listen = os.Getenv("APP_LISTEN")
 	}
@@ -72,15 +86,9 @@ func Init() {
 	default:
 		log.Panic(errors.New("env DB_URL err"))
 	}
-	var err error
 	GormZapLogger, err = GormLogger(os.Getenv("DB_LOGGER_FILE"), ParseLogLevel(os.Getenv("DB_LOGGER_LEVEL")), 1024, 30, 200)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	GinZapLogger, err = ZapLogger(os.Getenv("APP_LOGGER_FILE"), ParseLogLevel(os.Getenv("DB_LOGGER_LEVEL")), 1024, 30)
-	if err != nil {
-		log.Panic(err)
-	}
-	Logger = GinZapLogger
 }
