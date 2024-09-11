@@ -1,4 +1,4 @@
-package sugar
+package orm
 
 type BindParam interface {
 	Offset() int

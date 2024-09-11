@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/penndev/wga/admin/bind"
+	"github.com/penndev/galite/admin/bind"
 )
 
 type RouteItem struct {

@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/penndev/wga/admin/bind"
-	"github.com/penndev/wga/config"
-	"github.com/penndev/wga/model/system"
+	"github.com/penndev/galite/admin/bind"
+	"github.com/penndev/galite/config"
+	"github.com/penndev/galite/model/system"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -36,7 +36,6 @@ func AdminAdd(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误" + err.Error()})
 		return
 	}
-	param.Bind(param)
 	if param.Passwd == "" {
 		str, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.MinCost)
 		if err != nil {
@@ -46,7 +45,7 @@ func AdminAdd(c *gin.Context) {
 		}
 		param.Passwd = string(str)
 	}
-	if err := param.Create(param); err != nil {
+	if err := param.Bind(param).Create(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "创建失败(" + err.Error() + ")"})
 	} else {
 		c.JSON(http.StatusOK, bind.ErrorMessage{Message: "完成"})
@@ -60,8 +59,8 @@ func AdminUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
 		return
 	}
-	param.Bind(param)
-	if err := param.Update(param); err != nil {
+
+	if err := param.Bind(param).Updates(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "更新失败(" + err.Error() + ")"})
 	} else {
 		c.JSON(http.StatusOK, bind.ErrorMessage{Message: "完成"})
@@ -76,8 +75,7 @@ func AdminDelete(c *gin.Context) {
 	}
 	param := &system.SysAdmin{}
 	param.ID = uint(id)
-	param.Bind(param)
-	if err := param.Delete(param); err != nil {
+	if err := param.Bind(param).Delete(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "删除失败(" + err.Error() + ")"})
 	} else {
 		c.JSON(http.StatusOK, bind.ErrorMessage{Message: "完成"})

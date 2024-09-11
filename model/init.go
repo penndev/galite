@@ -1,13 +1,34 @@
 package model
 
 import (
-	"github.com/penndev/wga/config"
-	"github.com/penndev/wga/model/system"
+	"log"
+
+	"github.com/penndev/galite/model/orm"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
-// 注册表结构。
-func Migration() {
-	config.DB.AutoMigrate(&system.SysAdmin{})
-	config.DB.AutoMigrate(&system.SysRole{})
-	config.DB.AutoMigrate(&system.SysAccessLog{})
+// Database 在中间件中初始化mysql链接
+func InitGorm(dialector gorm.Dialector, Logger logger.Interface) {
+	dataBase, err := gorm.Open(dialector, &gorm.Config{
+		Logger: Logger, // 重写日志
+		// DisableForeignKeyConstraintWhenMigrating: true, // 禁止物理外键约束
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+
+	// sqlDB, err := dataBase.DB()
+	// if err != nil {
+	// 	log.Panic(err)
+	// }
+
+	// 最大空闲数
+	// sqlDB.SetMaxIdleConns(DBMaxIdleConns)
+	// 最大连接数
+	// sqlDB.SetMaxOpenConns(DBMaxOpenConns)
+	// 最大存活时间
+	// sqlDB.SetConnMaxLifetime(time.Hour)
+
+	orm.DB = dataBase
 }

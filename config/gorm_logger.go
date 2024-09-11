@@ -4,24 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
-	"os"
 	"runtime"
 	"strings"
 	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
-
-// 最大空闲连接数
-var DBMaxIdleConns = 10
-
-// 最大的连接数
-var DBMaxOpenConns = 50
 
 type gormLogger struct {
 	Zap                       *zap.Logger
@@ -93,14 +83,15 @@ func (l *gormLogger) logger(_ context.Context) *zap.Logger {
 	return l.Zap
 }
 
-// Database 在中间件中初始化mysql链接
-func initGorm() {
-	if os.Getenv("MYSQL_DSN") == "" {
-		log.Panic(errors.New("MYSQL_DSN .env not found"))
+// Gorm 自定义Logger 基于 zapLogger定义
+// slowThreshold 数据库慢日志
+func GormLogger(logFileName string, logLevel LogLevel, logFileSize int, logBackups int, slowThreshold time.Duration) (logger.Interface, error) {
+	zapLogger, err := ZapLogger(logFileName, logLevel, logFileSize, logBackups)
+	if err != nil {
+		return nil, err
 	}
-
 	var level logger.LogLevel
-	zapLevel := Logger.Level()
+	zapLevel := zapLogger.Level()
 	switch {
 	case zapLevel >= zap.ErrorLevel:
 		level = logger.Error
@@ -110,30 +101,10 @@ func initGorm() {
 		level = logger.Info
 	}
 
-	gl := &gormLogger{
-		Zap:                       Logger,
+	return &gormLogger{
+		Zap:                       zapLogger,
 		LogLevel:                  level,
 		SlowThreshold:             200 * time.Millisecond,
-		IgnoreRecordNotFoundError: true,
-	}
-
-	dataBase, err := gorm.Open(mysql.Open(os.Getenv("MYSQL_DSN")), &gorm.Config{
-		Logger:                                   gl,   // 重写日志
-		DisableForeignKeyConstraintWhenMigrating: true, // 禁止物理外键约束
-	})
-	if err != nil {
-		log.Panic(err)
-	}
-
-	sqlDB, err := dataBase.DB()
-	if err != nil {
-		log.Panic(err)
-	}
-
-	sqlDB.SetMaxIdleConns(DBMaxIdleConns)
-	sqlDB.SetMaxOpenConns(DBMaxOpenConns)
-	sqlDB.SetConnMaxLifetime(time.Hour)
-
-	DB = dataBase
-
+		IgnoreRecordNotFoundError: zapLevel != zap.DebugLevel,
+	}, nil
 }

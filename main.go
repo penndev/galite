@@ -3,41 +3,36 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 	"time"
 
-	"github.com/penndev/wga/config"
-	"github.com/penndev/wga/model"
-	"github.com/penndev/wga/route"
+	"github.com/penndev/galite/cache"
+	"github.com/penndev/galite/config"
+	"github.com/penndev/galite/model"
+	"github.com/penndev/galite/route"
+	"gorm.io/gorm/logger"
 )
 
 func main() {
-	/**
-	 * 初始化所有配置
-	 * zap日志 config.Logger
-	 * gorm连接池实例 config.DB
-	 * redis连接池实例 config.Redis
-	 */
-	config.Init()
-	defer config.Defer()
-	model.Migration()
 
-	// 加载所有路由
-	handle := route.Init()
+	config.Init()
+	// 初始化redis
+	cache.InitRedis(config.CacheRedisURL)
+	// 初始化数据库
+	if config.Mode == config.ModeDEV {
+		model.InitGorm(config.GormDial, logger.Default)
+	} else {
+		model.InitGorm(config.GormDial, config.GormZapLogger)
+	}
+	model.Migration() // 表自动迁移
 
 	// 启动Http服务器 高性能版
-	httpAddr := os.Getenv("GIN_LISTEN")
-	if httpAddr == "" {
-		httpAddr = ":80"
-	}
-
 	httpServe := &http.Server{
-		Addr:           httpAddr,
-		Handler:        handle,
+		Addr:           config.Listen,
+		Handler:        route.Init(),
 		ReadTimeout:    30 * time.Second,
 		WriteTimeout:   30 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	log.Printf("Listening and serving HTTP on [%s]\n", httpAddr)
+	log.Printf("Listening Port: http://%s \n", config.Listen)
 	log.Panic(httpServe.ListenAndServe())
 }

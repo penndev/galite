@@ -1,8 +1,8 @@
 package system
 
 import (
-	"github.com/penndev/wga/model/sugar"
-	"github.com/penndev/wga/model/system"
+	"github.com/penndev/galite/model/orm"
+	"github.com/penndev/galite/model/system"
 	"gorm.io/gorm"
 )
 
@@ -22,7 +22,7 @@ type bindChangePasswdInput struct {
 
 // 获取用户列表
 type bindSystemAdminParam struct {
-	sugar.BindListParam
+	orm.BindListParam
 	Email string `form:"email" binding:"omitempty,min=4,max=64"`
 }
 
@@ -42,7 +42,7 @@ func (b *bindSystemAdminParam) Param() *system.SysAdmin {
 
 // 获取权限列表
 type bindSystemRoleParam struct {
-	sugar.BindListParam
+	orm.BindListParam
 	Status uint8 `form:"status" binding:"omitempty,min=0,max=1"`
 }
 
@@ -59,7 +59,7 @@ func (b *bindSystemRoleParam) Param() *system.SysRole {
 
 // 获取访问日志列表
 type bindSysAccessParam struct {
-	sugar.BindListParam
+	orm.BindListParam
 }
 
 // 处理列表请求数据。

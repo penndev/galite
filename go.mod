@@ -1,4 +1,4 @@
-module github.com/penndev/wga
+module github.com/penndev/galite
 
 go 1.22.4
 

@@ -10,10 +10,10 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/penndev/galite/admin/bind"
+	"github.com/penndev/galite/config"
+	"github.com/penndev/galite/model/system"
 	"github.com/penndev/gopkg/captcha"
-	"github.com/penndev/wga/admin/bind"
-	"github.com/penndev/wga/config"
-	"github.com/penndev/wga/model/system"
 	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm/logger"
@@ -57,8 +57,7 @@ func Login(c *gin.Context) {
 				msg = "初始化管理员失败，请查看错误日志"
 			} else {
 				res.Passwd = string(str)
-				res.Bind(res)
-				if err = res.Create(&res); err != nil {
+				if err = res.Bind(res).Create(&res).Error; err != nil {
 					msg = "初始化管理员失败，请查看错误日志(1)"
 				}
 			}
@@ -80,7 +79,7 @@ func Login(c *gin.Context) {
 		return
 	}
 	// 超级管理员
-	if res.SysRoleID == 0 {
+	if res.SysRoleID == nil {
 		c.JSON(http.StatusOK, gin.H{
 			"token":  token,
 			"routes": "*", //超级管理员
@@ -117,23 +116,21 @@ func ChangePasswd(c *gin.Context) {
 		return
 	}
 	res.Passwd = string(pwd)
-	res.Bind(res)
-	res.Update(res)
+	res.Bind(res).Updates(res)
 	c.JSON(http.StatusOK, bind.ErrorMessage{Message: "修改完成"})
 }
 
 // 用户菜单鉴权
 func Role(isLog bool) gin.HandlerFunc {
-
 	return func(c *gin.Context) {
 		admin, err := system.SysAdminGetByID(c.GetString("jwtAuth"))
 		if err != nil {
-			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败"})
+			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败(1)"})
 			c.Abort()
 			return
 		}
-		// log.Println(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>", admin.SysRoleID)
-		if admin.SysRoleID != 0 {
+		// 没设置权限则默认为超级管理员
+		if admin.SysRoleID != nil {
 			routes := admin.SysRole.Route
 			pass := false
 			for _, route := range routes {
@@ -144,7 +141,7 @@ func Role(isLog bool) gin.HandlerFunc {
 			}
 
 			if !pass {
-				c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败"})
+				c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败(2)"})
 				c.Abort()
 				return
 			}
@@ -157,8 +154,7 @@ func Role(isLog bool) gin.HandlerFunc {
 				Path:       fmt.Sprint(c.Request.URL),
 				IP:         c.ClientIP(),
 			}
-			access.Bind(access)
-			if err := access.Create(access); err != nil {
+			if err := access.Bind(access).Create(access).Error; err != nil {
 				c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "日志记录失败:" + err.Error()})
 				c.Abort()
 				return
@@ -167,7 +163,7 @@ func Role(isLog bool) gin.HandlerFunc {
 			httpRequest, _ := httputil.DumpRequest(c.Request, false)
 			access.Payload = string(httpRequest)
 			access.Status = c.Writer.Status()
-			access.Update(access)
+			access.Bind(access).Updates(access)
 		}
 	}
 }
