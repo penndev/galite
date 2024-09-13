@@ -33,6 +33,6 @@ func main() {
 		WriteTimeout:   30 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	log.Printf("Listening Port: http://%s \n", config.Listen)
+	log.Printf("Listening Serve http://%s \n", config.Listen)
 	log.Panic(httpServe.ListenAndServe())
 }

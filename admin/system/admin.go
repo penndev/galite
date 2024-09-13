@@ -81,3 +81,18 @@ func AdminDelete(c *gin.Context) {
 		c.JSON(http.StatusOK, bind.ErrorMessage{Message: "完成"})
 	}
 }
+
+func AdminAccessLog(c *gin.Context) {
+	param := &bindSysAccessParam{}
+	if err := c.BindQuery(&param); err != nil {
+		log.Println(err)
+		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		return
+	}
+	var total int64
+	var list []system.SysAccessLog
+
+	m := param.Param() //处理筛选
+	m.List(&total, &list)
+	c.JSON(http.StatusOK, bind.DataList{Total: total, Data: list})
+}

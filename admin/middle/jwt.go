@@ -26,30 +26,26 @@ func JWTAuth(jwtSecret []byte) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		// token 验证包含了 expired
 		token, err := jwt.Parse(tokenStr, keyFunc)
 		if err != nil || !token.Valid {
-			// config.Logger.Warn("验证登录失败", zap.Error(err))
 			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "登录验证失败02"})
 			c.Abort()
 			return
 		}
-
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "登录验证失败03"})
 			c.Abort()
 			return
 		}
-
 		sub, ok := claims["sub"]
 		if !ok {
 			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "登录验证失败04"})
 			c.Abort()
 			return
 		}
-
 		c.Set("jwtAuth", sub)
+
 		c.Next()
 	}
 }

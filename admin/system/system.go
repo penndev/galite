@@ -2,10 +2,7 @@ package system
 
 import (
 	"errors"
-	"fmt"
-	"log"
 	"net/http"
-	"net/http/httputil"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -72,22 +69,24 @@ func Login(c *gin.Context) {
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 		"sub": res.ID,
-		"exp": jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour))}).SignedString([]byte(config.JWTSecret))
+		"exp": jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
+		"iat": jwt.NewNumericDate(time.Now()),
+	}).SignedString([]byte(config.JWTSecret))
 	if err != nil {
 		config.Logger.Error("用户登录失败", zap.Error(err))
 		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "用户登录失败(jwt签名错误)"})
 		return
 	}
 	// 超级管理员
-	if res.SysRoleID == nil {
+	if *res.SysRoleID > 0 {
 		c.JSON(http.StatusOK, gin.H{
 			"token":  token,
-			"routes": "*", //超级管理员
+			"routes": res.SysRole.Menu, //前端菜单解决方案
 		})
 	} else {
 		c.JSON(http.StatusOK, gin.H{
 			"token":  token,
-			"routes": res.SysRole.Menu, //前端菜单解决方案
+			"routes": "*", //超级管理员
 		})
 	}
 }
@@ -108,7 +107,6 @@ func ChangePasswd(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "旧的用户密码错误"})
 		return
 	}
-
 	pwd, err := bcrypt.GenerateFromPassword([]byte(request.NewPasswd), bcrypt.DefaultCost)
 	if err != nil {
 		config.Logger.Error("创建管理员密码失败", zap.Error(err))
@@ -118,67 +116,4 @@ func ChangePasswd(c *gin.Context) {
 	res.Passwd = string(pwd)
 	res.Bind(res).Updates(res)
 	c.JSON(http.StatusOK, bind.ErrorMessage{Message: "修改完成"})
-}
-
-// 用户菜单鉴权
-func Role(isLog bool) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		admin, err := system.SysAdminGetByID(c.GetString("jwtAuth"))
-		if err != nil {
-			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败(1)"})
-			c.Abort()
-			return
-		}
-		// 没设置权限则默认为超级管理员
-		if admin.SysRoleID != nil {
-			routes := admin.SysRole.Route
-			pass := false
-			for _, route := range routes {
-				if route.Method == c.Request.Method && route.Path == c.Request.URL.Path {
-					pass = true
-					break
-				}
-			}
-
-			if !pass {
-				c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败(2)"})
-				c.Abort()
-				return
-			}
-		}
-
-		if isLog { // 记录日志
-			access := &system.SysAccessLog{
-				SysAdminID: admin.ID,
-				Method:     c.Request.Method,
-				Path:       fmt.Sprint(c.Request.URL),
-				IP:         c.ClientIP(),
-			}
-			if err := access.Bind(access).Create(access).Error; err != nil {
-				c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "日志记录失败:" + err.Error()})
-				c.Abort()
-				return
-			}
-			c.Next()
-			httpRequest, _ := httputil.DumpRequest(c.Request, false)
-			access.Payload = string(httpRequest)
-			access.Status = c.Writer.Status()
-			access.Bind(access).Updates(access)
-		}
-	}
-}
-
-func AccessLog(c *gin.Context) {
-	param := &bindSysAccessParam{}
-	if err := c.BindQuery(&param); err != nil {
-		log.Println(err)
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
-		return
-	}
-	var total int64
-	var list []system.SysAccessLog
-
-	m := param.Param() //处理筛选
-	m.List(&total, &list)
-	c.JSON(http.StatusOK, bind.DataList{Total: total, Data: list})
 }

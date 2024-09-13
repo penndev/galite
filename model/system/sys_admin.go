@@ -8,9 +8,9 @@ type SysAdmin struct {
 	orm.Model
 	Email     string  `gorm:"uniqueIndex,size=256" json:"email"`
 	Passwd    string  `json:"-"`
-	SysRoleID *uint   `json:"adminRoleId"`
-	SysRole   SysRole `json:"AdminRole"`
-	NickName  string  `json:"nickname"`
+	SysRoleID *uint   `json:"SysRoleId"`
+	SysRole   SysRole `json:"SysRole"`
+	Nickname  string  `json:"nickname"`
 	Status    uint8   `json:"status"`
 	Remark    string  `json:"remark"`
 }

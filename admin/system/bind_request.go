@@ -67,7 +67,7 @@ func (b *bindSysAccessParam) Param() *system.SysAccessLog {
 	m := &system.SysAccessLog{}
 	w := func(orm *gorm.DB) *gorm.DB {
 		return orm.Where(m).Preload("SysAdmin", func(db *gorm.DB) *gorm.DB {
-			return db.Select("id, email")
+			return db.Select("id, nickname")
 		})
 	}
 	m.Bind(m, w, b)

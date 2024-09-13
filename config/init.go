@@ -24,7 +24,7 @@ const ModePROD = "prod"
 var Listen = ":8000"
 
 // 处理 jwt secret
-var JWTSecret = []byte("galite")
+var JWTSecret = []byte("secret")
 
 // redis连接URL
 var CacheRedisURL = "redis://default:@127.0.0.1:6379/1"

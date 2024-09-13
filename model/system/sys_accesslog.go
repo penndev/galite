@@ -4,8 +4,8 @@ import "github.com/penndev/galite/model/orm"
 
 type SysAccessLog struct {
 	orm.Model
-	SysAdminID uint     `json:"adminId"`
-	SysAdmin   SysAdmin `json:"AdminUser"`
+	SysAdminID uint     `json:"SysAdminId"`
+	SysAdmin   SysAdmin `json:"SysAdmin"`
 	Method     string   `json:"method"`
 	Payload    string   `json:"payload"`
 	Status     int      `json:"status"`
