@@ -3,6 +3,7 @@ package system
 import (
 	"errors"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -68,7 +69,7 @@ func Login(c *gin.Context) {
 	}
 
 	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": res.ID,
+		"sub": strconv.Itoa(int(res.ID)),
 		"exp": jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
 		"iat": jwt.NewNumericDate(time.Now()),
 	}).SignedString([]byte(config.JWTSecret))

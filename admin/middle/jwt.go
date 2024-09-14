@@ -38,8 +38,8 @@ func JWTAuth(jwtSecret []byte) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		sub, ok := claims["sub"]
-		if !ok {
+		sub, err := claims.GetSubject()
+		if err != nil {
 			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "登录验证失败04"})
 			c.Abort()
 			return

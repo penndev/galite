@@ -24,7 +24,7 @@ func Role(isLog bool) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		if admin.SysRole.Status != 1 {
+		if *admin.SysRoleID != 0 && admin.SysRole.Status != 1 {
 			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "角色状态错误"})
 			c.Abort()
 			return
