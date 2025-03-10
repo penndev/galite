@@ -1,7 +1,6 @@
 package system
 
 import (
-	// "github.com/penndev/galite/admin"
 	"github.com/penndev/galite/admin/bind"
 	"github.com/penndev/galite/model/orm"
 )
