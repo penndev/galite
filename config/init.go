@@ -6,9 +6,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/glebarez/sqlite"
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
 	"gorm.io/driver/mysql"
+	"gorm.io/driver/postgres"
+	"gorm.io/driver/sqlserver"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -27,7 +30,7 @@ var Listen = ":8000"
 var JWTSecret = []byte("secret")
 
 // redis连接URL
-var CacheRedisURL = "redis://default:@127.0.0.1:6379/1"
+var CacheRedisURL string
 
 // 数据库连接实例，
 // 将多个数据库连接进行抽象，减少不同数据库配置依赖
@@ -49,10 +52,10 @@ func Init() {
 	if os.Getenv("APP_MODE") != "dev" {
 		Mode = "prod"
 		if os.Getenv("DB_LOGGER_FILE") == "" {
-			os.Setenv("DB_LOGGER_FILE", "gorm.log")
+			log.Panic(errors.New("env DB_LOGGER_FILE [gorm.log] not found"))
 		}
 		if os.Getenv("APP_LOGGER_FILE") == "" {
-			os.Setenv("APP_LOGGER_FILE", "gin.log")
+			log.Panic(errors.New("env APP_LOGGER_FILE [gin.log] not found"))
 		}
 		// GinZapLogger 只收集prod模式下的日志
 		GinZapLogger, err = ZapLogger(os.Getenv("APP_LOGGER_FILE"), ParseLogLevel(os.Getenv("DB_LOGGER_LEVEL")), 1024, 30)
@@ -76,19 +79,29 @@ func Init() {
 	}
 	if os.Getenv("CACHE_REDIS_URL") != "" {
 		CacheRedisURL = os.Getenv("CACHE_REDIS_URL")
+	} else {
+		log.Panic(errors.New("env CACHE_REDIS_URL [redis://default:@127.0.0.1:6379/1] not found"))
 	}
+
 	// 处理数据库
 	switch {
 	case strings.HasPrefix(os.Getenv("DB_URL"), "mariadb://"):
 		GormDial = mysql.Open(strings.TrimPrefix(os.Getenv("DB_URL"), "mariadb://"))
 	case strings.HasPrefix(os.Getenv("DB_URL"), "mysql://"):
 		GormDial = mysql.Open(strings.TrimPrefix(os.Getenv("DB_URL"), "mysql://"))
+	case strings.HasPrefix(os.Getenv("DB_URL"), "sqlite://"):
+		GormDial = sqlite.Open(strings.TrimPrefix(os.Getenv("DB_URL"), "sqlite://"))
+	case strings.HasPrefix(os.Getenv("DB_URL"), "postgres://"):
+		GormDial = postgres.Open(strings.TrimPrefix(os.Getenv("DB_URL"), "postgres://"))
+	case strings.HasPrefix(os.Getenv("DB_URL"), "sqlserver://"):
+		GormDial = sqlserver.Open(os.Getenv("DB_URL"))
 	default:
 		log.Panic(errors.New("env DB_URL err"))
 	}
+
+	// 处理数据库日志
 	GormZapLogger, err = GormLogger(os.Getenv("DB_LOGGER_FILE"), ParseLogLevel(os.Getenv("DB_LOGGER_LEVEL")), 1024, 30, 200)
 	if err != nil {
 		log.Panic(err)
 	}
-
 }

@@ -4,6 +4,7 @@ import (
 	"github.com/penndev/galite/admin"
 	"github.com/penndev/galite/config"
 	"github.com/penndev/galite/route/middle"
+	"github.com/penndev/galite/wafcdn"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,7 +25,8 @@ func Init() *gin.Engine {
 	engine.Use(middle.CORS())
 
 	// 处理各种路由
-	admin.InitAdminRoute(engine.Group("/admin"))
+	admin.InitRoute(engine.Group("/admin"))
+	wafcdn.InitRoute(engine.Group("/@wafcdn"))
 
 	engine.GET("/ping", func(ctx *gin.Context) {
 		ctx.String(200, "pong")

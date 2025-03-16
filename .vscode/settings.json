@@ -1,8 +1,11 @@
 {
     "cSpell.words": [
+        "dbname",
         "galite",
+        "godotenv",
         "gonic",
         "gorm",
-        "penndev"
+        "penndev",
+        "wafcdn"
     ]
 }

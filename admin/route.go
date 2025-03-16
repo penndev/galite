@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func InitAdminRoute(r *gin.RouterGroup) {
+func InitRoute(r *gin.RouterGroup) {
 	// 未登录开放接口
 	r.GET("/captcha", system.Captcha) // 获取验证码
 	r.POST("/login", system.Login)    // 用户登录验证

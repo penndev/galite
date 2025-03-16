@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// @return Context.[Keys].RequestHost 请求Host
 func RequestHost() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		scheme := c.Request.Header.Get("X-Forwarded-Proto")

@@ -79,7 +79,7 @@ func Login(c *gin.Context) {
 		return
 	}
 	// 超级管理员
-	if *res.SysRoleID > 0 {
+	if res.SysRoleID != nil && *res.SysRoleID > 0 {
 		c.JSON(http.StatusOK, gin.H{
 			"token":  token,
 			"routes": res.SysRole.Menu, //前端菜单解决方案
