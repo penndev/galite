@@ -9,21 +9,17 @@ import (
 	"github.com/penndev/galite/config"
 	"github.com/penndev/galite/model"
 	"github.com/penndev/galite/route"
-	"gorm.io/gorm/logger"
 )
 
 func main() {
 
 	config.Init()
 	// 初始化redis
-	cache.InitRedis(config.CacheRedisURL)
-	// 初始化数据库
-	if config.Mode == config.ModeDEV {
-		model.InitGorm(config.GormDial, logger.Default)
-	} else {
-		model.InitGorm(config.GormDial, config.GormZapLogger)
-	}
-	model.Migration() // 表自动迁移
+	cache.InitRedis(config.CacheURL())
+
+	// 数据库处理
+	model.InitGorm(config.GormDial(), config.GormLogger()) // 初始化
+	model.Migration()                                      // 表自动迁移
 
 	// 启动Http服务器 高性能版
 	httpServe := &http.Server{

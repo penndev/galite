@@ -55,6 +55,8 @@ func Login(c *gin.Context) {
 				msg = "初始化管理员失败，请查看错误日志"
 			} else {
 				res.Passwd = string(str)
+				res.Status = 1
+				res.Nickname = "超级管理员"
 				if err = res.Bind(res).Create(&res).Error; err != nil {
 					msg = "初始化管理员失败，请查看错误日志(1)"
 				}

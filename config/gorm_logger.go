@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"os"
 	"runtime"
 	"strings"
 	"time"
@@ -83,9 +85,13 @@ func (l *gormLogger) logger(_ context.Context) *zap.Logger {
 	return l.Zap
 }
 
-// Gorm 自定义Logger 基于 zapLogger定义
-// slowThreshold 数据库慢日志
-func GormLogger(logFileName string, logLevel LogLevel, logFileSize int, logBackups int, slowThreshold time.Duration) (logger.Interface, error) {
+// **Gorm 自定义Logger 基于 zapLogger定义**
+// @param logFileName 日志文件名称
+// @param logLevel 日志级别
+// @param logFileSize 日志文件大小
+// @param logBackups 日志文件备份数量
+// @param slowThreshold 数据库慢日志阈值
+func GormZapLogger(logFileName string, logLevel LogLevel, logFileSize int, logBackups int, slowThreshold time.Duration) (logger.Interface, error) {
 	zapLogger, err := ZapLogger(logFileName, logLevel, logFileSize, logBackups)
 	if err != nil {
 		return nil, err
@@ -104,7 +110,23 @@ func GormLogger(logFileName string, logLevel LogLevel, logFileSize int, logBacku
 	return &gormLogger{
 		Zap:                       zapLogger,
 		LogLevel:                  level,
-		SlowThreshold:             200 * time.Millisecond,
+		SlowThreshold:             slowThreshold,
 		IgnoreRecordNotFoundError: zapLevel != zap.DebugLevel,
 	}, nil
+}
+
+func GormLogger() logger.Interface {
+	if Mode == ModeDEV {
+		return logger.Default
+	}
+
+	// 处理数据库日志
+	if os.Getenv("DB_LOGGER_FILE") == "" {
+		log.Panic(errors.New("env DB_LOGGER_FILE [gorm.log] not found"))
+	}
+	GormZapLogger, err := GormZapLogger(os.Getenv("DB_LOGGER_FILE"), ParseLogLevel(os.Getenv("DB_LOGGER_LEVEL")), 1024, 30, 200*time.Millisecond)
+	if err != nil {
+		log.Panic(err)
+	}
+	return GormZapLogger
 }

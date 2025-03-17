@@ -3,7 +3,6 @@ package middle
 import (
 	"fmt"
 	"net/http"
-	"net/http/httputil"
 
 	"github.com/gin-gonic/gin"
 	"github.com/penndev/galite/admin/bind"
@@ -24,14 +23,14 @@ func Role(isLog bool) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		if *admin.SysRoleID != 0 && admin.SysRole.Status != 1 {
+		if admin.SysRoleID != nil && *admin.SysRoleID != 0 && admin.SysRole.Status != 1 {
 			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "角色状态错误"})
 			c.Abort()
 			return
 		}
 
 		// 没设置权限则默认为超级管理员
-		if *admin.SysRoleID > 0 {
+		if admin.SysRoleID != nil && *admin.SysRoleID > 0 {
 			routes := admin.SysRole.Route
 			pass := false
 			for _, route := range routes {
@@ -60,8 +59,8 @@ func Role(isLog bool) gin.HandlerFunc {
 				return
 			}
 			c.Next()
-			httpRequest, _ := httputil.DumpRequest(c.Request, false)
-			access.Payload = string(httpRequest)
+			// httpRequest, _ := httputil.DumpRequest(c.Request, false)
+			// access.Payload = string(httpRequest)
 			access.Status = c.Writer.Status()
 			access.Bind(access).Updates(access)
 		}

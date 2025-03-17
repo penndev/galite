@@ -8,7 +8,7 @@ type SysAdmin struct {
 	orm.Model
 	Email     string  `gorm:"uniqueIndex,size=256" json:"email"`
 	Passwd    string  `json:"-"`
-	SysRoleID *uint   `json:"SysRoleId"`
+	SysRoleID *uint   `json:"SysRoleId"` // 必须用指针因为外键关联问题 foreign key constraint
 	SysRole   SysRole `json:"SysRole"`
 	Nickname  string  `json:"nickname"`
 	Status    uint8   `json:"status"`

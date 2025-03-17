@@ -11,15 +11,14 @@ import (
 
 // 开发模式与正常模式
 func Init() *gin.Engine {
-
 	var engine *gin.Engine
 	if config.Mode == config.ModeDEV {
 		engine = gin.Default()
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 		engine = gin.New()
-		engine.Use(middle.Logger(config.GinZapLogger))
-		engine.Use(middle.Recovery(config.GinZapLogger))
+		engine.Use(middle.Logger(config.Logger))
+		engine.Use(middle.Recovery(config.Logger))
 	}
 	// 处理通用的中间件
 	engine.Use(middle.CORS())
