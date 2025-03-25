@@ -43,9 +43,9 @@ Recovery日志级别为error
 - sqlite: `"sqlite://sqlite.db"`
 
 **日志**
-> dev模式日志驱动为 `logger.Default`  prod模式驱动为`zap.Logger` 默认日志级别为`debug`
-  - `"debug"`
-	- `"info"`
+> dev模式日志驱动为 `logger.Default`  prod模式驱动为`zap.Logger` 默认日志级别为`info`
+
+	- `"info"` 包含普通执行sql
 	- `"warn"`
 	- `"error"`
 

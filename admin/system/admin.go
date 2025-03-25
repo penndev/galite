@@ -5,13 +5,11 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/gin-gonic/gin"
 	"github.com/penndev/galite/admin/bind"
 	"github.com/penndev/galite/config"
 	"github.com/penndev/galite/model/system"
-
-	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
-
 	"golang.org/x/crypto/bcrypt"
 )
 

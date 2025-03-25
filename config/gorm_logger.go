@@ -116,15 +116,26 @@ func GormZapLogger(logFileName string, logLevel LogLevel, logFileSize int, logBa
 }
 
 func GormLogger() logger.Interface {
+	logLevel := ParseLogLevel(os.Getenv("DB_LOGGER_LEVEL"))
+	// 默认日志
 	if Mode == ModeDEV {
-		return logger.Default
+		config := logger.Config{
+			SlowThreshold:             200 * time.Millisecond,
+			LogLevel:                  logger.Warn,
+			IgnoreRecordNotFoundError: false,
+			Colorful:                  true,
+		}
+		if logLevel <= InfoLevel {
+			config.LogLevel = logger.Info
+		}
+		return logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), config)
 	}
 
 	// 处理数据库日志
 	if os.Getenv("DB_LOGGER_FILE") == "" {
 		log.Panic(errors.New("env DB_LOGGER_FILE [gorm.log] not found"))
 	}
-	GormZapLogger, err := GormZapLogger(os.Getenv("DB_LOGGER_FILE"), ParseLogLevel(os.Getenv("DB_LOGGER_LEVEL")), 1024, 30, 200*time.Millisecond)
+	GormZapLogger, err := GormZapLogger(os.Getenv("DB_LOGGER_FILE"), logLevel, 1024, 30, 200*time.Millisecond)
 	if err != nil {
 		log.Panic(err)
 	}

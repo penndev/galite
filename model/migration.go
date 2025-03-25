@@ -15,5 +15,7 @@ func Migration() {
 
 	// WAFCDN模块
 	orm.DB.AutoMigrate(&wafcdn.Cache{})
+	orm.DB.AutoMigrate(&wafcdn.Site{})
+	orm.DB.AutoMigrate(&wafcdn.Domain{})
 
 }

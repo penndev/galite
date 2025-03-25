@@ -4,6 +4,7 @@ import (
 	"github.com/penndev/galite/admin/bind"
 	"github.com/penndev/galite/admin/middle"
 	"github.com/penndev/galite/admin/system"
+	"github.com/penndev/galite/admin/wafcdn"
 	"github.com/penndev/galite/config"
 
 	"github.com/gin-gonic/gin"
@@ -36,4 +37,14 @@ func InitRoute(r *gin.RouterGroup) {
 	route.PUT("/system/admin", system.AdminUpdate)
 	route.DELETE("/system/admin", system.AdminDelete)
 	route.GET("/system/admin/access-log", system.AdminAccessLog)
+	// wafcdn
+	route.GET("/wafcdn/site", wafcdn.SiteList)
+	route.POST("/wafcdn/site", wafcdn.SiteAdd)
+	route.PUT("/wafcdn/site", wafcdn.SiteUpdate)
+	route.DELETE("/wafcdn/site", wafcdn.SiteDelete)
+	// 管理域名
+	route.GET("/wafcdn/domain", wafcdn.DomainList)
+	route.POST("/wafcdn/domain", wafcdn.DomainAdd)
+	route.PUT("/wafcdn/domain", wafcdn.DomainUpdate)
+	route.DELETE("/wafcdn/domain", wafcdn.DomainDelete)
 }

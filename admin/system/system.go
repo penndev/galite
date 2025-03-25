@@ -1,14 +1,20 @@
 package system
 
 import (
+	"context"
+	"encoding/base64"
 	"errors"
+	"image/color"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/penndev/galite/admin/bind"
+	"github.com/penndev/galite/cache"
 	"github.com/penndev/galite/config"
 	"github.com/penndev/galite/model/system"
 	"github.com/penndev/gopkg/captcha"
@@ -18,15 +24,29 @@ import (
 )
 
 func Captcha(c *gin.Context) {
-	vd, err := captcha.NewImg()
+	randText := captcha.RandText(4)
+	buf, err := captcha.NewPngImg(captcha.Option{
+		Width:     120,
+		Height:    30,
+		DPI:       90,
+		Text:      randText,
+		FontSize:  20,
+		TextColor: color.RGBA{0, 0, 0, 255},
+	})
 	if err != nil {
 		config.Logger.Error("Captcha", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "获取验证码出错"})
 		return
 	}
+	data := "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
+	id := uuid.New().String()
+	cmd := cache.Redis.Set(context.TODO(), "captcha:"+id, randText, 5*time.Minute)
+	if err := cmd.Err(); err != nil {
+		config.Logger.Error("Redis错误", zap.Error(err))
+	}
 	c.JSON(http.StatusOK, bindCaptcha{
-		CaptchaID:  vd.ID,
-		CaptchaURL: vd.PngBase64,
+		CaptchaID:  id,
+		CaptchaURL: data,
 	})
 }
 
@@ -39,7 +59,14 @@ func Login(c *gin.Context) {
 	}
 
 	// 创建验证码
-	if !captcha.Verify(request.CaptchaId, request.Captcha) {
+	captcha, err := cache.Redis.Get(context.Background(), "captcha:"+request.CaptchaId).Result()
+	if err != nil {
+		config.Logger.Warn("Redis错误", zap.Error(err))
+		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "验证码错误"})
+		return
+	}
+
+	if !strings.EqualFold(captcha, request.Captcha) {
 		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "验证码错误"})
 		return
 	}
@@ -57,7 +84,7 @@ func Login(c *gin.Context) {
 				res.Passwd = string(str)
 				res.Status = 1
 				res.Nickname = "超级管理员"
-				if err = res.Bind(res).Create(&res).Error; err != nil {
+				if err = res.Bind(res).Create(res).Error; err != nil {
 					msg = "初始化管理员失败，请查看错误日志(1)"
 				}
 			}
