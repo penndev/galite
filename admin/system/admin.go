@@ -57,7 +57,15 @@ func AdminUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
 		return
 	}
-
+	if param.Passwd == "" {
+		str, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.MinCost)
+		if err != nil {
+			config.Logger.Error("创建管理员密码失败", zap.Error(err))
+			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "初始化管理员失败，请查看错误日志"})
+			return
+		}
+		param.Passwd = string(str)
+	}
 	if err := param.Bind(param).Updates(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "更新失败(" + err.Error() + ")"})
 	} else {

@@ -73,3 +73,9 @@ func (b *bindSysAccessParam) Param() *system.SysAccessLog {
 	m.Bind(m, w, b)
 	return m
 }
+
+// 用户改密请求体
+type bindVerifyOPTInput struct {
+	Code   string `form:"code" binding:"required,len=6"` // 验证码
+	Secret string `form:"secret" binding:"required"`     // 密钥
+}

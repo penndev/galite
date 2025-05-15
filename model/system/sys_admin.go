@@ -12,6 +12,9 @@ type SysAdmin struct {
 	SysRole   SysRole `json:"SysRole"`
 	Nickname  string  `json:"nickname"`
 	Status    uint8   `json:"status"`
+	OtpStatus uint8   `json:"otpStatus"`
+	OtpTitle  string  `json:"otpTitle"`
+	OtpSecret string  `json:"otpSecret"`
 	Remark    string  `json:"remark"`
 }
 

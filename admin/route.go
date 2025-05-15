@@ -20,7 +20,8 @@ func InitRoute(r *gin.RouterGroup) {
 	r.Use(middle.JWTAuth(config.JWTSecret))
 
 	r.PUT("/change-passwd", system.ChangePasswd)
-
+	r.GET("/otp/secret", system.GetOTPSecret)    // OTP验证器 （谷歌验证器）
+	r.PUT("/otp/secret", system.VerifyOTPSecret) // OTP验证器 （谷歌验证器）
 	/*
 	 * 权限验证接口
 	 */
