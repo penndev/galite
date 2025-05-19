@@ -51,11 +51,33 @@ func Captcha(c *gin.Context) {
 	})
 }
 
+// 登录成功根据 sysadmin 返回 jwt token 数据
+func loginInfo(res *system.SysAdmin) (map[string]any, error) {
+	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		"sub": strconv.Itoa(int(res.ID)),
+		"exp": jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
+		"iat": jwt.NewNumericDate(time.Now()),
+	}).SignedString([]byte(config.JWTSecret))
+	if err != nil {
+		return gin.H{}, err
+	}
+	result := gin.H{
+		"token":     token,
+		"routes":    res.SysRole.Menu, //前端菜单解决方案
+		"nickname":  res.Nickname,
+		"otpStatus": res.OtpStatus,
+	}
+	if res.SysRoleID == nil || *res.SysRoleID < 1 {
+		result["routes"] = "*" // 超级管理员 则替换为通配符
+	}
+	return result, nil
+}
+
 func Login(c *gin.Context) {
 	var request bindLoginInput
 	if err := c.ShouldBindJSON(&request); err != nil {
 		config.Logger.Warn("登录失败", zap.Error(err))
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误" + err.Error()})
 		return
 	}
 
@@ -98,27 +120,80 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	token, err := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": strconv.Itoa(int(res.ID)),
-		"exp": jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
-		"iat": jwt.NewNumericDate(time.Now()),
-	}).SignedString([]byte(config.JWTSecret))
+	// 登录需要二次验证时，先将用户信息存入 Redis，等待 OTP 验证
+	if res.OtpStatus == 1 {
+		key := "otp:login:" + strconv.Itoa(int(res.ID))
+		data, err := cache.Encode(res)
+		if err != nil {
+			config.Logger.Error("cache.Encode", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, bind.ErrorMessage{Message: "编码失败"})
+			return
+		}
+		cmd := cache.Redis.Set(context.TODO(), key, data, 5*time.Minute)
+		if err := cmd.Err(); err != nil {
+			config.Logger.Error("Redis错误", zap.Error(err))
+			c.JSON(http.StatusInternalServerError, bind.ErrorMessage{Message: "Redis错误"})
+			return
+		}
+		// 返回
+		c.JSON(http.StatusOK, gin.H{
+			"otpStatus": res.OtpStatus,
+			"id":        res.ID,
+			"otpTitle":  res.OtpTitle,
+		})
+		return
+	}
+	result, err := loginInfo(res)
 	if err != nil {
 		config.Logger.Error("用户登录失败", zap.Error(err))
 		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "用户登录失败(jwt签名错误)"})
 		return
 	}
+	c.JSON(http.StatusOK, result)
+}
 
-	result := gin.H{
-		"token":    token,
-		"routes":   res.SysRole.Menu, //前端菜单解决方案
-		"nickname": res.Nickname,
+// 两步验证登录
+func LoginOTP(c *gin.Context) {
+	var request struct {
+		ID   int    `form:"id" binding:"required"`         // 用户ID
+		Code string `form:"code" binding:"required,len=6"` // 验证码
 	}
-	if res.SysRoleID == nil || *res.SysRoleID < 1 {
-		result["routes"] = "*" // 超级管理员 则替换为通配符
+	if err := c.ShouldBindJSON(&request); err != nil {
+		config.Logger.Warn("二步验证登录失败", zap.Error(err))
+		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		return
+	}
+	key := "otp:login:" + strconv.Itoa(request.ID)
+	data, err := cache.Redis.Get(context.TODO(), key).Bytes()
+	if err != nil {
+		config.Logger.Warn("Redis错误", zap.Error(err))
+		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "登录信息已过期，请重新登录"})
+		return
+	}
+	var res system.SysAdmin
+	if err := cache.Decode(string(data), &res); err != nil {
+		config.Logger.Error("cache.Decode", zap.Error(err))
+		c.JSON(http.StatusInternalServerError, bind.ErrorMessage{Message: "解码失败"})
+		return
+	}
+	// 校验 OTP
+	code, err := otp.GenerateOTPWithTime(res.OtpSecret, time.Now())
+	if err != nil {
+		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "二步验证失败"})
+		return
+	}
+	if code != request.Code {
+		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "二步验证码错误"})
+		return
+	}
+
+	result, err := loginInfo(&res)
+	if err != nil {
+		config.Logger.Error("用户登录失败", zap.Error(err))
+		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "用户登录失败(jwt签名错误)"})
+		return
 	}
 	c.JSON(http.StatusOK, result)
-
 }
 
 func ChangePasswd(c *gin.Context) {
@@ -174,7 +249,12 @@ func GetOTPSecret(c *gin.Context) {
 
 // 验证二次验证器客户端是否正常
 func VerifyOTPSecret(c *gin.Context) {
-	var request bindVerifyOPTInput
+	// 用户改密请求体
+	var request struct {
+		Code   string `form:"code" binding:"required,len=6"` // 验证码
+		Secret string `form:"secret" binding:"required"`     // 密钥
+	}
+
 	if err := c.ShouldBindJSON(&request); err != nil {
 		config.Logger.Warn("二次验证失败", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误" + err.Error()})
@@ -188,5 +268,4 @@ func VerifyOTPSecret(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, bind.ErrorMessage{Message: "二次验证成功"})
-
 }

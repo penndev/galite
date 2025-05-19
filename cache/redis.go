@@ -1,7 +1,9 @@
 package cache
 
 import (
+	"bytes"
 	"context"
+	"encoding/gob"
 	"log"
 
 	"github.com/redis/go-redis/v9"
@@ -20,4 +22,19 @@ func InitRedis(redisURL string) {
 	if _, err := Redis.Ping(context.TODO()).Result(); err != nil {
 		log.Panic(err)
 	}
+}
+
+func Encode(data any) (string, error) {
+	var buf bytes.Buffer
+	enc := gob.NewEncoder(&buf)
+	if err := enc.Encode(data); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
+}
+
+func Decode(str string, target any) error {
+	buf := bytes.NewBufferString(str)
+	dec := gob.NewDecoder(buf)
+	return dec.Decode(target)
 }
