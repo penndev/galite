@@ -196,6 +196,7 @@ func LoginOTP(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
+// 用户修改密码
 func ChangePasswd(c *gin.Context) {
 	var request bindChangePasswdInput
 	if err := c.ShouldBindJSON(&request); err != nil {
@@ -203,7 +204,7 @@ func ChangePasswd(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
 		return
 	}
-	res, err := system.SysAdminGetByID(c.GetString("jwtAuth"))
+	res, err := system.SysAdminGetByID(c.GetInt("adminID"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "修改失败" + err.Error()})
 		return
@@ -220,6 +221,28 @@ func ChangePasswd(c *gin.Context) {
 	}
 	res.Passwd = string(pwd)
 	res.Bind(res).Updates(res)
+	c.JSON(http.StatusOK, bind.ErrorMessage{Message: "修改完成"})
+}
+
+// 用户重置自己的OTP验证器
+func ChangeOTP(c *gin.Context) {
+	var request struct {
+		OtpTitle  string `form:"otpTitle"`  // 密码
+		OtpSecret string `form:"otpSecret"` // 密码
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		config.Logger.Warn("修改失败", zap.Error(err))
+		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		return
+	}
+	res, err := system.SysAdminGetByID(c.GetInt("adminID"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "修改失败" + err.Error()})
+		return
+	}
+	res.OtpStatus = 1
+	res.OtpTitle = request.OtpTitle
+	res.OtpSecret = request.OtpSecret
 	c.JSON(http.StatusOK, bind.ErrorMessage{Message: "修改完成"})
 }
 

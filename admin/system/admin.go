@@ -89,6 +89,7 @@ func AdminDelete(c *gin.Context) {
 }
 
 func AdminAccessLog(c *gin.Context) {
+	c.Set("accessLog", false) // 设置访问日志标志
 	param := &bindSysAccessParam{}
 	if err := c.BindQuery(&param); err != nil {
 		log.Println(err)

@@ -3,6 +3,7 @@ package middle
 import (
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -44,8 +45,12 @@ func JWTAuth(jwtSecret []byte) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-		c.Set("jwtAuth", sub)
-
-		c.Next()
+		adminID, err := strconv.Atoi(sub) // 验证 sub 是否为数字
+		if err != nil {
+			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "登录验证失败05"})
+			c.Abort()
+			return
+		}
+		c.Set("adminID", adminID)
 	}
 }

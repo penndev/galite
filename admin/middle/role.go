@@ -10,9 +10,9 @@ import (
 )
 
 // 用户菜单鉴权
-func Role(isLog bool) gin.HandlerFunc {
+func Role() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		admin, err := system.SysAdminGetByID(c.GetString("jwtAuth"))
+		admin, err := system.SysAdminGetByID(c.GetInt("adminID"))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败(1)"})
 			c.Abort()
@@ -46,23 +46,29 @@ func Role(isLog bool) gin.HandlerFunc {
 			}
 		}
 
-		if isLog { // 记录日志
-			access := &system.SysAccessLog{
-				SysAdminID: admin.ID,
-				Method:     c.Request.Method,
-				Path:       fmt.Sprint(c.Request.URL),
-				IP:         c.ClientIP(),
-			}
+		access := &system.SysAccessLog{
+			SysAdminID: admin.ID,
+			Method:     c.Request.Method,
+			Path:       fmt.Sprint(c.Request.URL),
+			IP:         c.ClientIP(),
+		}
+		c.Set("accessLog", true) // 设置访问日志标志
+		c.Next()
+		if c.GetBool("accessLog") {
+			// 是否记录访问日志
+			// httpRequest, err := httputil.DumpRequest(c.Request, false)
+			// if err != nil {
+			// 	access.Payload = "日志记录失败: " + err.Error()
+			// } else {
+			// 	access.Payload = string(httpRequest)
+			// }
+			access.Status = c.Writer.Status()
 			if err := access.Bind(access).Create(access).Error; err != nil {
 				c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "日志记录失败:" + err.Error()})
 				c.Abort()
 				return
 			}
-			c.Next()
-			// httpRequest, _ := httputil.DumpRequest(c.Request, false)
-			// access.Payload = string(httpRequest)
-			access.Status = c.Writer.Status()
-			access.Bind(access).Updates(access)
 		}
+
 	}
 }

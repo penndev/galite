@@ -24,7 +24,7 @@ func SysAdminGetByEmail(email string) (*SysAdmin, error) {
 	return &sysAdmin, result.Error
 }
 
-func SysAdminGetByID(id string) (*SysAdmin, error) {
+func SysAdminGetByID(id int) (*SysAdmin, error) {
 	var sysAdmin SysAdmin
 	result := orm.DB.Preload("SysRole").Where("id = ?", id).First(&sysAdmin)
 	return &sysAdmin, result.Error

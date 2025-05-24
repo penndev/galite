@@ -10,6 +10,44 @@ import (
 	"github.com/penndev/galite/model/system"
 )
 
+type RoleRoute struct {
+	*gin.RouterGroup
+	list []system.RouteItem
+}
+
+func (r *RoleRoute) GET(relativePath string, handlers ...gin.HandlerFunc) {
+	r.list = append(r.list, system.RouteItem{Method: http.MethodGet, Path: r.BasePath() + relativePath})
+	r.RouterGroup.GET(relativePath, handlers...)
+}
+
+func (r *RoleRoute) POST(relativePath string, handlers ...gin.HandlerFunc) {
+	r.list = append(r.list, system.RouteItem{Method: http.MethodPost, Path: r.BasePath() + relativePath})
+	r.RouterGroup.POST(relativePath, handlers...)
+}
+
+func (r *RoleRoute) DELETE(relativePath string, handlers ...gin.HandlerFunc) {
+	r.list = append(r.list, system.RouteItem{Method: http.MethodDelete, Path: r.BasePath() + relativePath})
+	r.RouterGroup.DELETE(relativePath, handlers...)
+}
+
+func (r *RoleRoute) PUT(relativePath string, handlers ...gin.HandlerFunc) {
+	r.list = append(r.list, system.RouteItem{Method: http.MethodPut, Path: r.BasePath() + relativePath})
+	r.RouterGroup.PUT(relativePath, handlers...)
+}
+
+func (r *RoleRoute) GETRoutes(c *gin.Context) {
+	c.JSON(http.StatusOK, bind.DataList{Data: r.list})
+}
+
+// 通过对 gin router.Group 进行封装，来控制全部的路由信息
+func NewRoleRouter(r *gin.RouterGroup, middleware ...gin.HandlerFunc) *RoleRoute {
+	r.Use(middleware...) // 使用角色鉴权中间件
+	return &RoleRoute{
+		RouterGroup: r,
+		list:        []system.RouteItem{},
+	}
+}
+
 func RoleList(c *gin.Context) {
 	param := &bindSystemRoleParam{}
 	if err := c.BindQuery(&param); err != nil {
