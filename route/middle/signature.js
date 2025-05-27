@@ -58,7 +58,7 @@ const signHMAC = async (msg, key, algorithm = "SHA-256") => {
     return new Uint8Array(signature);
 }
 
-const originURL = new URL("https://example.com/api?param=value");
+const originURL = new URL("http://127.0.0.1:8000/ping?param=value");
 if (originURL.hash) {
     throw new Error(`URL contains a hash fragment: ${originURL.toString()}`);;
 }
@@ -67,7 +67,7 @@ if (originURL.hash) {
 if (originURL.searchParams.has("expired")) {
     throw new Error(`URL expired: ${originURL.toString()}`);
 }
-const expired = 100 //Math.floor(new Date().getTime() / 1000) + 30; // 30秒后过期
+const expired = Math.floor(new Date().getTime() / 1000) + 30; // 30秒后过期
 originURL.searchParams.set("expired", expired);
 
 // 添加签名
