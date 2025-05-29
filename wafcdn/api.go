@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/penndev/galite/model/wafcdn"
+	"github.com/penndev/galite/wafcdn/model"
 )
 
 // 对nginx提供接口 获取证书配置
@@ -19,7 +19,7 @@ func handleSSL(c *gin.Context) {
 		})
 		return
 	}
-	domain := wafcdn.Domain{}
+	domain := model.Domain{}
 	result := domain.Bind(&domain).Where("name = ?", host).Last(&domain)
 	if !domain.SSL || result.Error != nil {
 		c.JSON(400, gin.H{
@@ -43,7 +43,7 @@ func handleDomain(c *gin.Context) {
 		})
 		return
 	}
-	domain := wafcdn.Domain{}
+	domain := model.Domain{}
 	result := domain.Bind(&domain).Where("name = ?", c.Query("host")).Preload("Site").Last(&domain)
 	if result.Error != nil {
 		c.JSON(400, gin.H{
@@ -85,7 +85,7 @@ func handleDomain(c *gin.Context) {
 }
 
 func handleGetCache(c *gin.Context) {
-	param := &wafcdn.Cache{}
+	param := &model.Cache{}
 	if err := c.BindQuery(param); err != nil {
 		log.Println("参数错误", err.Error())
 		c.JSON(400, gin.H{"message": "参数错误" + err.Error()})
@@ -99,7 +99,7 @@ func handleGetCache(c *gin.Context) {
 }
 
 func handlePutCache(c *gin.Context) {
-	param := &wafcdn.Cache{}
+	param := &model.Cache{}
 	if err := c.BindJSON(param); err != nil {
 		log.Println("参数错误", err.Error())
 		c.JSON(400, gin.H{"message": "参数错误" + err.Error()})

@@ -1,4 +1,4 @@
-# galite
+# GALite
 
 > Web开发脚手架,减少包之间的依赖。
 
@@ -22,10 +22,10 @@
 **日志**
 > dev模式日志驱动为 `zap.NewDevelopment`   prod模式驱动为`zap.Logger`  默认日志输出级别为info
 
-  - `"debug"`
-	- `"info"`: gin访问详情日志级别为
-	- `"warn"`
-	- `"error"`: gin Recovery日志级别
+  - `debug`
+	- `info`: gin访问详情日志级别为
+	- `warn`
+	- `error`: gin Recovery日志级别
 
 自定义日志用法为`config.Logger`
 
@@ -50,6 +50,5 @@
 ## 中间件列表
  - 跨域请求处理 `route/middle/cors.go`
  - 反代请求Header头处理 `route/middle/request.go`
- - 请求鉴权 [`route/middle/signature.go`](./route/middle/signature.go)
- - 请求加解密 [`route/middle/encryption.go`](./route/middle/encryption.go)
- - 客户端鉴权与加密示例 [`route/middle/example.js`](./route/middle/example.js.js)
+ - 请求鉴权 [`route/middle/signature.go`](./route/middle/signature.go) 请求示例[gist code](https://gist.github.com/penndev/96ef7ddaba72e1eb42b09ce24f8ff734)
+ - 请求加解密 [`route/middle/encryption.go`](./route/middle/encryption.go) 请求示例[gist code](https://gist.github.com/penndev/96ef7ddaba72e1eb42b09ce24f8ff734)

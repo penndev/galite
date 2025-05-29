@@ -31,6 +31,16 @@ type EncryptionConfig struct {
 	OnError         func(c *gin.Context, status int, err error)
 }
 
+// 加解密中间件
+// js客户端示例 https://gist.github.com/penndev/96ef7ddaba72e1eb42b09ce24f8ff734
+// example:
+//
+//	var encryptMiddle = middle.Encryption(middle.EncryptionConfig{
+//		Secret:          os.Getenv("APP_SECRET"),
+//		IvName:          "X-Iv",
+//		ContentTypeName: "application/x-buffer",
+//		OnError:         onError, // 自定义异常处理结果
+//	})
 func Encryption(cfg EncryptionConfig) gin.HandlerFunc {
 	// 加解密需要固定的key长度，所以必须处理key
 	shaHash := sha256.New()

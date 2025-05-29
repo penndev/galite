@@ -1,4 +1,4 @@
-package wafcdn
+package model
 
 import (
 	"github.com/penndev/galite/model/orm"

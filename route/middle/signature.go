@@ -23,6 +23,16 @@ type SignatureConfig struct {
 }
 
 // 验证url签名签名步骤
+// js客户端示例 https://gist.github.com/penndev/96ef7ddaba72e1eb42b09ce24f8ff734
+// example:
+//
+//	var signMiddle = middle.Signature(middle.SignatureConfig{
+//		Key:         []byte(os.Getenv("APP_SECRET")), // 签名密钥
+//		Hash:        sha256.New,                      // HMAC算法
+//		SignName:    "sign",                          // 签名参数名称
+//		ExpiredName: "expired",                       // 过期时间参数名称
+//		OnError:     onError,                         // 自定义异常处理结果
+//	})
 func Signature(cfg SignatureConfig) gin.HandlerFunc {
 	// 验证参数是否合规
 	if len(cfg.Key) == 0 {

@@ -1,8 +1,8 @@
-package wafcdn
+package admin
 
 import (
 	"github.com/penndev/galite/model/orm"
-	"github.com/penndev/galite/model/wafcdn"
+	"github.com/penndev/galite/wafcdn/model"
 	"gorm.io/gorm"
 )
 
@@ -13,8 +13,8 @@ type bindSiteParam struct {
 }
 
 // 处理列表请求数据。
-func (b *bindSiteParam) Param() *wafcdn.Site {
-	m := &wafcdn.Site{}
+func (b *bindSiteParam) Param() *model.Site {
+	m := &model.Site{}
 	if b.Remark != "" {
 		m.Remark = "%" + b.Remark + "%"
 	}
@@ -32,8 +32,8 @@ type bindDomainParam struct {
 }
 
 // 处理列表请求数据。
-func (b *bindDomainParam) Param() *wafcdn.Domain {
-	m := &wafcdn.Domain{}
+func (b *bindDomainParam) Param() *model.Domain {
+	m := &model.Domain{}
 	if b.Name != "" {
 		m.Name = "%" + b.Name + "%"
 	}

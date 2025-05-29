@@ -1,4 +1,4 @@
-package wafcdn
+package admin
 
 import (
 	"log"
@@ -7,13 +7,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/penndev/galite/admin/bind"
-	"github.com/penndev/galite/model/wafcdn"
+	"github.com/penndev/galite/wafcdn/model"
 )
 
 // 添加新的站点
 
 func DomainAdd(c *gin.Context) {
-	param := &wafcdn.Domain{}
+	param := &model.Domain{}
 	if err := c.BindJSON(&param); err != nil {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误" + err.Error()})
 		return
@@ -34,7 +34,7 @@ func DomainList(c *gin.Context) {
 		return
 	}
 	var total int64
-	var list []wafcdn.Domain
+	var list []model.Domain
 
 	m := param.Param() //处理筛选
 	m.List(&total, &list)
@@ -43,7 +43,7 @@ func DomainList(c *gin.Context) {
 
 // 更新资料
 func DomainUpdate(c *gin.Context) {
-	param := &wafcdn.Domain{}
+	param := &model.Domain{}
 	if err := c.BindJSON(&param); err != nil {
 		log.Println(err)
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
@@ -63,7 +63,7 @@ func DomainDelete(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
 		return
 	}
-	param := &wafcdn.Domain{}
+	param := &model.Domain{}
 	param.ID = uint(id)
 	if err := param.Bind(param).Delete(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "删除失败(" + err.Error() + ")"})
