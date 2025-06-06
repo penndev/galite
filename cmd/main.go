@@ -5,21 +5,14 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/penndev/galite/cache"
 	"github.com/penndev/galite/config"
-	"github.com/penndev/galite/model"
 	"github.com/penndev/galite/route"
 )
 
 func main() {
 
-	config.Init()
-	// 初始化redis
-	cache.InitRedis(config.CacheURL())
-
-	// 数据库处理
-	model.InitGorm(config.GormDial(), config.GormLogger()) // 初始化
-	model.Migration()                                      // 表自动迁移
+	// 初始化各种组件
+	//config.init()
 
 	// 启动Http服务器 高性能版
 	httpServe := &http.Server{

@@ -43,9 +43,9 @@
 **日志**
 > dev模式日志驱动为 `logger.Default`  prod模式驱动为`zap.Logger` 默认日志级别为`info`
 
-	- `"info"` 包含普通执行sql
-	- `"warn"`
-	- `"error"`
+	- `info` 包含普通执行sql
+	- `warn`
+	- `error`
 
 ## 中间件列表
  - 跨域请求处理 `route/middle/cors.go`

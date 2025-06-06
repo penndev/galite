@@ -1,6 +1,8 @@
 package route
 
 import (
+	"log"
+
 	"github.com/penndev/galite/admin"
 	"github.com/penndev/galite/config"
 	"github.com/penndev/galite/route/middle"
@@ -11,6 +13,7 @@ import (
 // 开发模式与正常模式
 func Init() *gin.Engine {
 	var engine *gin.Engine
+	log.Println(config.Mode)
 	if config.Mode == config.ModeDEV {
 		engine = gin.Default()
 	} else {

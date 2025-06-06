@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
+// 实现 logger.Interface 接口
 type gormLogger struct {
 	Zap                       *zap.Logger
 	LogLevel                  logger.LogLevel
@@ -54,9 +55,7 @@ func (l *gormLogger) Trace(ctx context.Context, begin time.Time, fc func() (stri
 	if l.LogLevel <= 0 {
 		return
 	}
-
 	zapLogger := l.logger(ctx)
-
 	elapsed := time.Since(begin)
 	switch {
 	case err != nil && l.LogLevel >= logger.Error && (!errors.Is(err, logger.ErrRecordNotFound) || !l.IgnoreRecordNotFoundError):
@@ -85,59 +84,81 @@ func (l *gormLogger) logger(_ context.Context) *zap.Logger {
 	return l.Zap
 }
 
-// **Gorm 自定义Logger 基于 zapLogger定义**
-// @param logFileName 日志文件名称
-// @param logLevel 日志级别
-// @param logFileSize 日志文件大小
-// @param logBackups 日志文件备份数量
-// @param slowThreshold 数据库慢日志阈值
-func GormZapLogger(logFileName string, logLevel LogLevel, logFileSize int, logBackups int, slowThreshold time.Duration) (logger.Interface, error) {
-	zapLogger, err := ZapLogger(logFileName, logLevel, logFileSize, logBackups)
+// 控制台输出，默认的gorm日志格式
+func GormDefaultLogger() (logger.Interface, error) {
+	logLevel := ParseLogLevel(os.Getenv("DB_LOGGER_LEVEL"))
+	config := logger.Config{
+		SlowThreshold:             200 * time.Millisecond,
+		LogLevel:                  logLevel.toGormLoggerLevel(),
+		IgnoreRecordNotFoundError: logLevel == DebugLevel,
+		Colorful:                  true, //颜色控制
+	}
+	return logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), config), nil
+}
+
+// 文件输出，json格式的zap日志输出
+func GormZapLogger() (logger.Interface, error) {
+	logLevel := ParseLogLevel(os.Getenv("DB_LOGGER_LEVEL"))
+	if os.Getenv("DB_LOGGER_FILE") == "" {
+		return nil, errors.New("env DB_LOGGER_FILE [gorm.log] not found")
+	}
+
+	var err error
+	zapLogger, err := ZapLogger(os.Getenv("APP_LOGGER_FILE"), logLevel.toZapLoggerLevel(), 1024, 30)
 	if err != nil {
 		return nil, err
-	}
-	var level logger.LogLevel
-	zapLevel := zapLogger.Level()
-	switch {
-	case zapLevel >= zap.ErrorLevel:
-		level = logger.Error
-	case zapLevel >= zap.WarnLevel:
-		level = logger.Warn
-	default:
-		level = logger.Info
 	}
 
 	return &gormLogger{
 		Zap:                       zapLogger,
-		LogLevel:                  level,
-		SlowThreshold:             slowThreshold,
-		IgnoreRecordNotFoundError: zapLevel != zap.DebugLevel,
+		LogLevel:                  logLevel.toGormLoggerLevel(),
+		SlowThreshold:             200 * time.Millisecond,
+		IgnoreRecordNotFoundError: logLevel == DebugLevel,
 	}, nil
 }
 
-func GormLogger() logger.Interface {
-	logLevel := ParseLogLevel(os.Getenv("DB_LOGGER_LEVEL"))
-	// 默认日志
-	if Mode == ModeDEV {
-		config := logger.Config{
-			SlowThreshold:             200 * time.Millisecond,
-			LogLevel:                  logger.Warn,
-			IgnoreRecordNotFoundError: false,
-			Colorful:                  true,
-		}
-		if logLevel <= InfoLevel {
-			config.LogLevel = logger.Info
-		}
-		return logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), config)
-	}
+// Gorm 自定义Logger 基于 zapLogger定义
+// @param zapLogger zap日志实例
+// @param slowThreshold 数据库慢日志阈值
+// -
+// info级别与以下会输出 全部sql
+// warn级别以下会输出 slow sql
+// error 级别一下会输出 错误信息
+// func GormZapLogger(zapLogger *zap.Logger, slowThreshold time.Duration) (logger.Interface, error) {
+// 	var level logger.LogLevel
+// 	zapLevel := zapLogger.Level()
+// 	switch {
+// 	case zapLevel >= zap.ErrorLevel:
+// 		level = logger.Error
+// 	case zapLevel >= zap.WarnLevel:
+// 		level = logger.Warn
+// 	default:
+// 		level = logger.Info
+// 	}
 
-	// 处理数据库日志
-	if os.Getenv("DB_LOGGER_FILE") == "" {
-		log.Panic(errors.New("env DB_LOGGER_FILE [gorm.log] not found"))
-	}
-	GormZapLogger, err := GormZapLogger(os.Getenv("DB_LOGGER_FILE"), logLevel, 1024, 30, 200*time.Millisecond)
-	if err != nil {
-		log.Panic(err)
-	}
-	return GormZapLogger
-}
+// }
+
+// // 如果是开发模式。-则控制台默认输出格式。
+// // 如果是生产模式。-则使用zap的日志格式输出。
+// func GormLogger() (logger.Interface, error) {
+
+// 	// 默认日志
+// 	if Mode == ModeDEV {
+// 		logLevel := ParseLogLevel(os.Getenv("DB_LOGGER_LEVEL"))
+// 		config := logger.Config{
+// 			SlowThreshold:             200 * time.Millisecond,
+// 			LogLevel:                  logLevel.toGormLoggerLevel(),
+// 			IgnoreRecordNotFoundError: false,
+// 			Colorful:                  true,
+// 		}
+// 		return logger.New(log.New(os.Stdout, "\r\n", log.LstdFlags), config), nil
+// 	}
+
+// 	// 处理数据库日志
+
+// 	gormZapLogger, err := GormZapLogger(Logger, 200*time.Millisecond)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return gormZapLogger, nil
+// }

@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"log"
 	"os"
 	"strings"
 
@@ -16,7 +15,7 @@ import (
 // 数据库连接实例，
 // 将多个数据库连接进行抽象，减少不同数据库配置依赖
 // 不论什么数据库最终提供给gram的都为 gorm.Dialector
-func GormDial() gorm.Dialector {
+func GormDial() (gorm.Dialector, error) {
 	var GormDial gorm.Dialector
 	switch {
 	case strings.HasPrefix(os.Getenv("DB_URL"), "mariadb://"):
@@ -30,8 +29,8 @@ func GormDial() gorm.Dialector {
 	case strings.HasPrefix(os.Getenv("DB_URL"), "sqlserver://"):
 		GormDial = sqlserver.Open(os.Getenv("DB_URL"))
 	default:
-		log.Panic(errors.New("env DB_URL err"))
+		return nil, errors.New("env DB_URL err")
 	}
-	return GormDial
+	return GormDial, nil
 
 }
