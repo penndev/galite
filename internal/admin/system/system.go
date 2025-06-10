@@ -1,6 +1,7 @@
 package system
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"errors"
@@ -15,8 +16,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/penndev/galite/internal/admin/bind"
 	"github.com/penndev/galite/internal/admin/model/system"
-	"github.com/penndev/galite/internal/cache"
 	"github.com/penndev/galite/internal/config"
+	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/internal/logger"
 	"github.com/penndev/gopkg/captcha"
 	"github.com/penndev/gopkg/otp"
@@ -36,15 +37,15 @@ func Captcha(c *gin.Context) {
 		TextColor: color.RGBA{0, 0, 0, 255},
 	})
 	if err != nil {
-		logger.ZapLogger.Error("Captcha", zap.Error(err))
+		logger.L.Error("Captcha", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "获取验证码出错"})
 		return
 	}
 	data := "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
 	id := uuid.New().String()
-	cmd := cache.Redis.Set(context.TODO(), "captcha:"+id, randText, 5*time.Minute)
+	cmd := lib.Redis.Set(context.TODO(), "captcha:"+id, randText, 5*time.Minute)
 	if err := cmd.Err(); err != nil {
-		logger.ZapLogger.Error("Redis错误", zap.Error(err))
+		logger.L.Error("Redis错误", zap.Error(err))
 	}
 	c.JSON(http.StatusOK, bindCaptcha{
 		CaptchaID:  id,
@@ -77,15 +78,15 @@ func loginInfo(res *system.SysAdmin) (map[string]any, error) {
 func Login(c *gin.Context) {
 	var request bindLoginInput
 	if err := c.ShouldBindJSON(&request); err != nil {
-		logger.ZapLogger.Warn("登录失败", zap.Error(err))
+		logger.L.Warn("登录失败", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误" + err.Error()})
 		return
 	}
 
 	// 创建验证码
-	captcha, err := cache.Redis.Get(context.Background(), "captcha:"+request.CaptchaId).Result()
+	captcha, err := lib.Redis.Get(context.Background(), "captcha:"+request.CaptchaId).Result()
 	if err != nil {
-		logger.ZapLogger.Warn("Redis错误", zap.Error(err))
+		logger.L.Warn("Redis错误", zap.Error(err))
 		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "验证码错误"})
 		return
 	}
@@ -102,7 +103,7 @@ func Login(c *gin.Context) {
 			res.Email = request.Username
 			bcryptPasswd, err := bcrypt.GenerateFromPassword([]byte(request.Password), bcrypt.DefaultCost)
 			if err != nil {
-				logger.ZapLogger.Error("初始化管理员失败", zap.Error(err))
+				logger.L.Error("初始化管理员失败", zap.Error(err))
 				msg = "初始化管理员失败，请查看错误日志"
 			} else {
 				res.Passwd = string(bcryptPasswd)
@@ -124,15 +125,15 @@ func Login(c *gin.Context) {
 	// 登录需要二次验证时，先将用户信息存入 Redis，等待 OTP 验证
 	if res.OtpStatus == 1 {
 		key := "otp:login:" + strconv.Itoa(int(res.ID))
-		data, err := cache.Encode(res)
+		data, err := lib.Encode(res)
 		if err != nil {
-			logger.ZapLogger.Error("cache.Encode", zap.Error(err))
+			logger.L.Error("lib.Encode", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, bind.ErrorMessage{Message: "编码失败"})
 			return
 		}
-		cmd := cache.Redis.Set(context.TODO(), key, data, 5*time.Minute)
+		cmd := lib.Redis.Set(context.TODO(), key, data, 5*time.Minute)
 		if err := cmd.Err(); err != nil {
-			logger.ZapLogger.Error("Redis错误", zap.Error(err))
+			logger.L.Error("Redis错误", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, bind.ErrorMessage{Message: "Redis错误"})
 			return
 		}
@@ -146,7 +147,7 @@ func Login(c *gin.Context) {
 	}
 	result, err := loginInfo(res)
 	if err != nil {
-		logger.ZapLogger.Error("用户登录失败", zap.Error(err))
+		logger.L.Error("用户登录失败", zap.Error(err))
 		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "用户登录失败(jwt签名错误)"})
 		return
 	}
@@ -160,20 +161,20 @@ func LoginOTP(c *gin.Context) {
 		Code string `form:"code" binding:"required,len=6"` // 验证码
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		logger.ZapLogger.Warn("二步验证登录失败", zap.Error(err))
+		logger.L.Warn("二步验证登录失败", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
 		return
 	}
 	key := "otp:login:" + strconv.Itoa(request.ID)
-	data, err := cache.Redis.Get(context.TODO(), key).Bytes()
+	data, err := lib.Redis.Get(context.TODO(), key).Bytes()
 	if err != nil {
-		logger.ZapLogger.Warn("Redis错误", zap.Error(err))
+		logger.L.Warn("Redis错误", zap.Error(err))
 		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "登录信息已过期，请重新登录"})
 		return
 	}
 	var res system.SysAdmin
-	if err := cache.Decode(string(data), &res); err != nil {
-		logger.ZapLogger.Error("cache.Decode", zap.Error(err))
+	if err := lib.Decode(bytes.NewBuffer(data), &res); err != nil {
+		logger.L.Error("lib.Decode", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, bind.ErrorMessage{Message: "解码失败"})
 		return
 	}
@@ -190,7 +191,7 @@ func LoginOTP(c *gin.Context) {
 
 	result, err := loginInfo(&res)
 	if err != nil {
-		logger.ZapLogger.Error("用户登录失败", zap.Error(err))
+		logger.L.Error("用户登录失败", zap.Error(err))
 		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "用户登录失败(jwt签名错误)"})
 		return
 	}
@@ -201,7 +202,7 @@ func LoginOTP(c *gin.Context) {
 func ChangePasswd(c *gin.Context) {
 	var request bindChangePasswdInput
 	if err := c.ShouldBindJSON(&request); err != nil {
-		logger.ZapLogger.Warn("修改失败", zap.Error(err))
+		logger.L.Warn("修改失败", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
 		return
 	}
@@ -216,7 +217,7 @@ func ChangePasswd(c *gin.Context) {
 	}
 	pwd, err := bcrypt.GenerateFromPassword([]byte(request.NewPasswd), bcrypt.DefaultCost)
 	if err != nil {
-		logger.ZapLogger.Error("创建管理员密码失败", zap.Error(err))
+		logger.L.Error("创建管理员密码失败", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "创建密码失败"})
 		return
 	}
@@ -232,7 +233,7 @@ func ChangeOTP(c *gin.Context) {
 		OtpSecret string `form:"otpSecret"` // 密码
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
-		logger.ZapLogger.Warn("修改失败", zap.Error(err))
+		logger.L.Warn("修改失败", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
 		return
 	}
@@ -260,7 +261,7 @@ func GetOTPSecret(c *gin.Context) {
 	// 生成一个新的二次验证器
 	secret, err := otp.GenerateSecret()
 	if err != nil {
-		logger.ZapLogger.Error("生成二次验证器失败", zap.Error(err))
+		logger.L.Error("生成二次验证器失败", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, bind.ErrorMessage{Message: "生成二次验证器失败"})
 		return
 	}
@@ -280,13 +281,13 @@ func VerifyOTPSecret(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&request); err != nil {
-		logger.ZapLogger.Warn("二次验证失败", zap.Error(err))
+		logger.L.Warn("二次验证失败", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误" + err.Error()})
 		return
 	}
 	code, err := otp.GenerateOTPWithTime(request.Secret, time.Now())
 	if code != request.Code {
-		logger.ZapLogger.Warn("二次验证失败", zap.Error(err))
+		logger.L.Warn("二次验证失败", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "二次验证失败"})
 		return
 	}

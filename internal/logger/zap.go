@@ -2,11 +2,18 @@ package logger
 
 import "go.uber.org/zap"
 
-// 数据库写入日志
-var GormZapLogger *zap.Logger
+type Logger struct {
+	*zap.Logger
+}
 
-// gin框架写入日志
-var GinZapLogger *zap.Logger
+var (
+	GinZapLogger  *zap.Logger // gin框架写入日志
+	GormZapLogger *zap.Logger // 数据库写入日志
+	L             *Logger
+)
 
-// 用户自定义写入日志
-var ZapLogger *zap.Logger
+func InitLogger(l *zap.Logger) {
+	L = &Logger{l}
+	GinZapLogger = l
+	GormZapLogger = l
+}

@@ -1,9 +1,7 @@
-package cache
+package lib
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -22,19 +20,4 @@ func InitRedis(redisURL string) error {
 		return err
 	}
 	return nil
-}
-
-func Encode(data any) (string, error) {
-	var buf bytes.Buffer
-	enc := gob.NewEncoder(&buf)
-	if err := enc.Encode(data); err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
-
-func Decode(str string, target any) error {
-	buf := bytes.NewBufferString(str)
-	dec := gob.NewDecoder(buf)
-	return dec.Decode(target)
 }

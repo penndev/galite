@@ -26,8 +26,6 @@ func InitLogger() error {
 			return err
 		}
 	}
-	loggerNal.GinZapLogger = mainLog
-	loggerNal.GormZapLogger = mainLog
-	loggerNal.ZapLogger = mainLog
+	loggerNal.InitLogger(mainLog)
 	return nil
 }

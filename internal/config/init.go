@@ -3,7 +3,7 @@ package config
 import (
 	"log"
 
-	"github.com/penndev/galite/internal/cache"
+	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/pkg/logger"
 )
 
@@ -63,11 +63,11 @@ func Init() {
 	if err := InitGorm(); err != nil {
 		log.Panic(err)
 	}
-	if err := InitCache(); err != nil {
+	if err := InitRedis(); err != nil {
 		log.Panic(err)
 	}
 }
 
-func InitCache() error {
-	return cache.InitRedis(cfg.Cache.Dsn)
+func InitRedis() error {
+	return lib.InitRedis(cfg.Cache.Dsn)
 }

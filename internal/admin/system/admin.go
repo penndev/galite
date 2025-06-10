@@ -37,7 +37,7 @@ func AdminAdd(c *gin.Context) {
 	if param.Passwd == "" {
 		str, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.MinCost)
 		if err != nil {
-			logger.ZapLogger.Error("创建管理员密码失败", zap.Error(err))
+			logger.L.Error("创建管理员密码失败", zap.Error(err))
 			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "初始化管理员失败，请查看错误日志"})
 			return
 		}
@@ -60,7 +60,7 @@ func AdminUpdate(c *gin.Context) {
 	if param.Passwd == "" {
 		str, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.MinCost)
 		if err != nil {
-			logger.ZapLogger.Error("创建管理员密码失败", zap.Error(err))
+			logger.L.Error("创建管理员密码失败", zap.Error(err))
 			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "初始化管理员失败，请查看错误日志"})
 			return
 		}
