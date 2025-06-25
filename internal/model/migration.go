@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/penndev/galite/internal/admin/model/system"
+	modelWafCdn "github.com/penndev/galite/internal/wafcdn/model"
 	"github.com/penndev/galite/pkg/orm"
 )
 
@@ -12,4 +13,5 @@ func Migration() {
 	orm.DB.AutoMigrate(&system.SysRole{})
 	orm.DB.AutoMigrate(&system.SysAccessLog{})
 
+	modelWafCdn.Migration(orm.DB)
 }

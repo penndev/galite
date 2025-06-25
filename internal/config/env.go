@@ -37,7 +37,6 @@ func InitEnv() error {
 		Listen: listen,
 		Secret: secret,
 		Mode:   mode,
-
 		Logger: Logger{
 			Dsn:   os.Getenv("APP_LOGGER_FILE"),
 			Level: logger.ParseLogLevel(os.Getenv("APP_LOGGER_LEVEL")),
@@ -47,6 +46,9 @@ func InitEnv() error {
 		},
 		Cache: Cache{
 			Dsn: os.Getenv("CACHE_URL"),
+		},
+		Badger: Badger{
+			Dsn: os.Getenv("BADGER_URL"),
 		},
 	}
 	return nil

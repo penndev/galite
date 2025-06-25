@@ -5,6 +5,7 @@ import (
 	"github.com/penndev/galite/internal/admin/middle"
 	"github.com/penndev/galite/internal/admin/system"
 	"github.com/penndev/galite/internal/config"
+	"github.com/penndev/galite/internal/wafcdn"
 )
 
 func InitRoute(r *gin.RouterGroup) {
@@ -39,4 +40,7 @@ func InitRoute(r *gin.RouterGroup) {
 	route.PUT("/system/admin", system.AdminUpdate)
 	route.DELETE("/system/admin", system.AdminDelete)
 	route.GET("/system/admin/access-log", system.AdminAccessLog)
+
+	// 挂载wafcdn后台管理
+	wafcdn.InitAdminRoute(route.Group("/wafcdn"))
 }

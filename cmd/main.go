@@ -11,6 +11,7 @@ import (
 
 func main() {
 	// 初始化各种组件
+	defer config.Defer()
 	if err := config.InitEnv(); err != nil {
 		log.Panic(err)
 	}
@@ -21,6 +22,10 @@ func main() {
 		log.Panic(err)
 	}
 	if err := config.InitRedis(); err != nil {
+		log.Panic(err)
+	}
+
+	if err := config.InitBadger(); err != nil {
 		log.Panic(err)
 	}
 
