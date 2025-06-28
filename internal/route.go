@@ -5,7 +5,6 @@ import (
 	"github.com/penndev/galite/internal/admin"
 	"github.com/penndev/galite/internal/config"
 	"github.com/penndev/galite/internal/logger"
-	"github.com/penndev/galite/internal/wafcdn"
 	"github.com/penndev/galite/pkg/middle"
 )
 
@@ -25,8 +24,6 @@ func InitRoute() *gin.Engine {
 
 	// 后台请求路由
 	admin.InitRoute(engine.Group("/admin"))
-
-	wafcdn.InitApiRoute(engine.Group("/@wafcdn"))
 
 	engine.GET("/ping", func(ctx *gin.Context) {
 		ctx.String(200, "pong")

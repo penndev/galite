@@ -3,17 +3,13 @@ package system
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
 	"errors"
-	"image/color"
 	"net/http"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
 	"github.com/penndev/galite/internal/admin/bind"
 	"github.com/penndev/galite/internal/admin/model/system"
 	"github.com/penndev/galite/internal/config"
@@ -27,26 +23,37 @@ import (
 )
 
 func Captcha(c *gin.Context) {
-	randText := captcha.RandText(4)
-	buf, err := captcha.NewPngImg(captcha.Option{
-		Width:     120,
-		Height:    30,
-		DPI:       90,
-		Text:      randText,
-		FontSize:  20,
-		TextColor: color.RGBA{0, 0, 0, 255},
-	})
+	vd, err := captcha.NewImg()
 	if err != nil {
 		logger.L.Error("Captcha", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "获取验证码出错"})
 		return
 	}
-	data := "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
-	id := uuid.New().String()
-	cmd := lib.Redis.Set(context.TODO(), "captcha:"+id, randText, 5*time.Minute)
-	if err := cmd.Err(); err != nil {
-		logger.L.Error("Redis错误", zap.Error(err))
-	}
+	id := vd.ID
+	data := vd.PngBase64
+
+	// - 使用redis自定义存储验证码
+	// randText := captcha.RandText(4)
+	// buf, err := captcha.NewPngImg(captcha.Option{
+	// 	Width:     120,
+	// 	Height:    30,
+	// 	DPI:       90,
+	// 	Text:      randText,
+	// 	FontSize:  20,
+	// 	TextColor: color.RGBA{0, 0, 0, 255},
+	// })
+	// if err != nil {
+	// 	logger.L.Error("Captcha", zap.Error(err))
+	// 	c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "获取验证码出错"})
+	// 	return
+	// }
+	// data := "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
+	// id := uuid.New().String()
+	// cmd := lib.Redis.Set(context.TODO(), "captcha:"+id, randText, 5*time.Minute)
+	// if err := cmd.Err(); err != nil {
+	// 	logger.L.Error("Redis错误", zap.Error(err))
+	// }
+
 	c.JSON(http.StatusOK, bindCaptcha{
 		CaptchaID:  id,
 		CaptchaURL: data,
@@ -83,18 +90,25 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// 创建验证码
-	captcha, err := lib.Redis.Get(context.Background(), "captcha:"+request.CaptchaId).Result()
-	if err != nil {
-		logger.L.Warn("Redis错误", zap.Error(err))
+	// 验证验证码
+	// captcha, err := lib.Redis.Get(context.Background(), "captcha:"+request.CaptchaId).Result()
+	// if err != nil {
+	// 	logger.L.Warn("Redis错误", zap.Error(err))
+	// 	c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "验证码错误"})
+	// 	return
+	// }
+
+	// if !strings.EqualFold(captcha, request.Captcha) {
+	// 	c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "验证码错误"})
+	// 	return
+	// }
+
+	// 验证验证码
+	if !captcha.Verify(request.CaptchaId, request.Captcha) {
 		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "验证码错误"})
 		return
 	}
 
-	if !strings.EqualFold(captcha, request.Captcha) {
-		c.JSON(http.StatusForbidden, bind.ErrorMessage{Message: "验证码错误"})
-		return
-	}
 	res, err := system.SysAdminGetByEmail(request.Username)
 	if err != nil {
 		var msg = "获取用户失败"

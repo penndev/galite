@@ -15,7 +15,6 @@
 
 **连接**
 
-_其他驱动不需要可以删除减少包的体积_
 
 - mysql: `mysql://root:123456@tcp(127.0.0.1:3306)/galite?charset=utf8mb4&parseTime=True&loc=Local`
 - mariadb: `mariadb://root:123456@tcp(127.0.0.1:3306)/galite?charset=utf8mb4&parseTime=True&loc=Local`
@@ -26,6 +25,19 @@ _其他驱动不需要可以删除减少包的体积_
 **日志**
 > dev模式日志驱动为 `logger.Default`  prod模式驱动为`zap.Logger` 默认日志级别为`info`
 
-	- `info` 包含普通执行sql
-	- `warn` 慢日志警告等
-	- `error`
+- `info` 包含普通执行sql
+- `warn` 慢日志警告等
+- `error`
+
+## 部署
+
+1. _其他数据库驱动不需要可以删除减少包的体积_
+2. _图片验证码如果是集群部署需要设置redis存储_
+
+```bash
+$env:GOOS = "linux"
+$env:GOARCH = "amd64"
+$env:CGO_ENABLED = "0"
+
+go build -o "wafcdn" ./main.go
+```
