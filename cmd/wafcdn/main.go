@@ -10,6 +10,8 @@ import (
 	"github.com/penndev/galite/internal/wafcdn"
 )
 
+var startTime time.Time = time.Now()
+
 func main() {
 	// 初始化各种组件
 	defer config.Defer()
@@ -22,15 +24,13 @@ func main() {
 	if err := config.InitGorm(); err != nil {
 		log.Panic(err)
 	}
-	if err := config.InitBadger(); err != nil {
+	if err := config.InitRedis(); err != nil {
 		log.Panic(err)
 	}
 
-	route := internal.InitRoute()
-	// 挂载接口路由
-	wafcdn.InitApiRoute(route.Group("/@wafcdn"))
-	// 挂载后台管理UI
-	route.Static("/-admin", "./dist")
+	route := internal.InitRoute()                    // 挂载默认接口路由
+	route.Static("/-admin", "./dist")                // 挂载后台管理UI
+	route.GroupPush("/@wafcdn", wafcdn.InitApiRoute) // openresty通讯接口
 
 	// 启动Http服务器 高性能版
 	httpServe := &http.Server{
@@ -40,6 +40,6 @@ func main() {
 		WriteTimeout:   30 * time.Second,
 		MaxHeaderBytes: 1 << 20,
 	}
-	log.Printf("Listening Serve http://%s \n", config.Listen())
+	log.Printf("[HTTP] Listening(%s) on: http://%s\n", time.Since(startTime), config.Listen())
 	log.Panic(httpServe.ListenAndServe())
 }

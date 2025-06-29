@@ -1,14 +1,14 @@
 package wafcdn
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/penndev/galite/internal/wafcdn/admin"
 	"github.com/penndev/galite/internal/wafcdn/api"
+	"github.com/penndev/galite/pkg/ginhelper"
 )
 
 // 注册api接口
 // wafcdn.InitApiRoute(engine.Group("/@wafcdn"))
-func InitApiRoute(r *gin.RouterGroup) {
+func InitApiRoute(r *ginhelper.RouterGroup) {
 	r.GET("/ssl", handleSSL)            // 获取证书配置信息
 	r.GET("/domain", handleDomain)      // 配置域名信息
 	r.GET("/cache", api.HandleGetCache) // 查询缓存信息
@@ -17,7 +17,7 @@ func InitApiRoute(r *gin.RouterGroup) {
 
 // 注册admin接口
 // wafcdn.InitAdminRoute(engine.Group("/wafcdn"))
-func InitAdminRoute(route *gin.RouterGroup) {
+func InitAdminRoute(route *ginhelper.RouterGroup) {
 	// wafcdn
 	route.GET("/site", admin.SiteList)
 	route.POST("/site", admin.SiteAdd)

@@ -31,13 +31,7 @@
 
 ## 部署
 
-1. _其他数据库驱动不需要可以删除减少包的体积_
-2. _图片验证码如果是集群部署需要设置redis存储_
-
-```bash
-$env:GOOS = "linux"
-$env:GOARCH = "amd64"
-$env:CGO_ENABLED = "0"
-
-go build -o "wafcdn" ./main.go
-```
+1. 其他数据库驱动不需要可以删除减少包的体积
+2. 图片验证码如果是集群部署需要设置redis存储
+3. 设置代理来源信任IP,防止伪造header头 `-Forwarded-For` `X-Real-IP`
+4. 调整`config mode`

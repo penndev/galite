@@ -1,4 +1,4 @@
-package middle
+package ginhelper
 
 import (
 	"github.com/gin-gonic/gin"

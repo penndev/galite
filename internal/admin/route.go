@@ -1,14 +1,18 @@
 package admin
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
+	"github.com/penndev/galite/internal/admin/bind"
 	"github.com/penndev/galite/internal/admin/middle"
 	"github.com/penndev/galite/internal/admin/system"
 	"github.com/penndev/galite/internal/config"
 	"github.com/penndev/galite/internal/wafcdn"
+	"github.com/penndev/galite/pkg/ginhelper"
 )
 
-func InitRoute(r *gin.RouterGroup) {
+func InitRoute(r *ginhelper.RouterGroup) {
 	// 未登录开放接口
 	r.GET("/captcha", system.Captcha)     // 获取验证码
 	r.POST("/login", system.Login)        // 用户登录验证
@@ -27,10 +31,12 @@ func InitRoute(r *gin.RouterGroup) {
 	 * 权限验证接口
 	 * route.Context.Set("accessLog", false) 被middle.Role控制
 	 */
-	route := system.NewRoleRouter(r, middle.Role())
+	route := r.RoleRoute(middle.Role())
 
 	// 后台脚手架鉴权控制功能
-	route.GET("/system/role/route", route.GETRoutes) // 通过对路由包装来动态返回全接口
+	route.GET("/system/role/route", func(c *gin.Context) {
+		c.JSON(http.StatusOK, bind.DataList{Data: route.RouteList()})
+	}) // 通过对路由包装来动态返回全接口
 	route.GET("/system/role", system.RoleList)
 	route.POST("/system/role", system.RoleAdd)
 	route.PUT("/system/role", system.RoleUpdate)
@@ -42,5 +48,5 @@ func InitRoute(r *gin.RouterGroup) {
 	route.GET("/system/admin/access-log", system.AdminAccessLog)
 
 	// 挂载wafcdn后台管理
-	wafcdn.InitAdminRoute(route.Group("/wafcdn"))
+	route.GroupPush("/wafcdn", wafcdn.InitAdminRoute)
 }
