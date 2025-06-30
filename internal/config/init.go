@@ -2,9 +2,12 @@ package config
 
 import (
 	"log"
+	"time"
 
 	"github.com/penndev/galite/internal/lib"
 )
+
+var StartTime time.Time = time.Now()
 
 // 包应该被引入就立即执行初始化操作
 // 方便阅读所以在main中显式执行
