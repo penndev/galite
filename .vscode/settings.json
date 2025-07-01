@@ -3,6 +3,7 @@
         "dbname",
         "Dialector",
         "galite",
+        "ginhelper",
         "glebarez",
         "godotenv",
         "gonic",
