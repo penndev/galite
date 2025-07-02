@@ -30,7 +30,7 @@ func CacheList(c *gin.Context) {
 func CacheDelete(c *gin.Context) {
 	ids := c.QueryArray("ids")
 	idInt, err := util.StrConvArr[uint](ids)
-	model.DeleteCaches(idInt)
+	model.CacheDeleteByIds(idInt)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: err.Error()})
 		return

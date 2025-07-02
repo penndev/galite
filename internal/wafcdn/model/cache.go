@@ -1,12 +1,12 @@
 package model
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
 
-	"github.com/dgraph-io/badger/v4"
 	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/internal/logger"
 	"github.com/penndev/galite/pkg/orm"
@@ -65,33 +65,42 @@ type Cache struct {
 }
 
 func (cache *Cache) CacheKey() string {
-	return fmt.Sprintf("%d%s%s", cache.SiteID, cache.Uri, cache.Method)
+	return fmt.Sprintf("%d:%s:%s", cache.SiteID, cache.Uri, cache.Method)
+}
+
+func (cache *Cache) SetCache(cacheKey string) error {
+	// 设置缓存日期。到底多久过期。
+	return lib.Redis.SetStruct(
+		cacheKey,
+		Cache{
+			Header: cache.Header,
+			Path:   cache.Path,
+			Time:   cache.Time,
+		},
+		-1,
+	)
 }
 
 // 删除一个文件应该如何删除呢
 // 首先肯定要开启事务来达成一个原子性的操作
-// 因为使用了 Badger 所以要用这个来先操作锁
-func DeleteCaches(ids []uint) error {
-	// 开启数据库事务。来删除数据库中的缓存
-	// 首先批量删除Badger和缓存文件，保证请求不会出现存在缓存则404的情况。
-	var cache Cache
+// 然后在数据库插入成功后再修改完整的文件名
+// 不然文件名称修改后但是最新的文件再次被删除了。
+func CacheDeleteByIds(ids []uint) error {
 	var caches []Cache
-	cache.Bind(cache, func(db *gorm.DB) *gorm.DB {
+	m := &Cache{}
+	m.Bind(m, func(db *gorm.DB) *gorm.DB {
 		db.Where("id IN ?", ids)
 		return db
 	}).Find(&caches)
-	// 需要优化批量删除性能不会太好
-	for _, c := range caches {
-		err := lib.Badger.Update(func(txn *badger.Txn) error {
-			err := txn.Delete([]byte(c.CacheKey()))
-			return err
-		})
-		if err != nil {
-			logger.L.Warn("cache/delete", zap.Error(err))
-			continue
+	m.Gorm().Transaction(func(tx *gorm.DB) error {
+		for _, cache := range caches {
+			tx.Delete(&cache)
+			lib.Redis.Del(context.TODO(), cache.CacheKey())
+			if err := os.Remove(cache.Path); err != nil {
+				logger.L.Warn("删除失败", zap.Error(err))
+			}
 		}
-		os.Remove(c.Path)
-		c.Gorm().Delete(&c)
-	}
+		return nil
+	})
 	return nil
 }
