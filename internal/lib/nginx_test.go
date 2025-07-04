@@ -12,6 +12,10 @@ func TestNginxManager(t *testing.T) {
 		Prefix:     "C:/Users/Penn/Dev/github/wafcdn",
 		OutputFile: "./nginx.log",
 	}
+	t.Log("配置文件")
+	t.Log(nm.TestConfig())
+	t.Log(nm.Version(false))
+	t.Log(nm.Version(true))
 	t.Log("准备启动")
 	t.Log(nm.Start())
 	t.Log("查看状态")

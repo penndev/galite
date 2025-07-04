@@ -15,7 +15,7 @@ func CacheList(c *gin.Context) {
 	param := &bindCacheParam{}
 	if err := c.BindQuery(&param); err != nil {
 		log.Println(err)
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
 	var total int64
@@ -32,10 +32,10 @@ func CacheDelete(c *gin.Context) {
 	idInt, err := util.StrConvArr[uint](ids)
 	model.CacheDeleteByIds(idInt)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: err.Error()})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
 		return
 	}
-	c.JSON(http.StatusOK, bind.ErrorMessage{
+	c.JSON(http.StatusOK, bind.Message{
 		Message: "完成",
 	})
 }

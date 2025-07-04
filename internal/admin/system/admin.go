@@ -17,7 +17,7 @@ func AdminList(c *gin.Context) {
 	param := &bindSystemAdminParam{}
 	if err := c.BindQuery(&param); err != nil {
 		log.Println(err)
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
 	var total int64
@@ -31,22 +31,22 @@ func AdminList(c *gin.Context) {
 func AdminAdd(c *gin.Context) {
 	param := &system.SysAdmin{}
 	if err := c.BindJSON(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误" + err.Error()})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	if param.Passwd == "" {
 		str, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.MinCost)
 		if err != nil {
 			logger.L.Error("创建管理员密码失败", zap.Error(err))
-			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "初始化管理员失败，请查看错误日志"})
+			c.JSON(http.StatusBadRequest, bind.Message{Message: "初始化管理员失败，请查看错误日志"})
 			return
 		}
 		param.Passwd = string(str)
 	}
 	if err := param.Bind(param).Create(param).Error; err != nil {
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "创建失败(" + err.Error() + ")"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "创建失败(" + err.Error() + ")"})
 	} else {
-		c.JSON(http.StatusOK, bind.ErrorMessage{Message: "完成"})
+		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
 	}
 }
 
@@ -54,37 +54,37 @@ func AdminUpdate(c *gin.Context) {
 	param := &system.SysAdmin{}
 	if err := c.BindJSON(&param); err != nil {
 		log.Println(err)
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
 	if param.Passwd == "" {
 		str, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.MinCost)
 		if err != nil {
 			logger.L.Error("创建管理员密码失败", zap.Error(err))
-			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "初始化管理员失败，请查看错误日志"})
+			c.JSON(http.StatusBadRequest, bind.Message{Message: "初始化管理员失败，请查看错误日志"})
 			return
 		}
 		param.Passwd = string(str)
 	}
 	if err := param.Bind(param).Updates(param).Error; err != nil {
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "更新失败(" + err.Error() + ")"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "更新失败(" + err.Error() + ")"})
 	} else {
-		c.JSON(http.StatusOK, bind.ErrorMessage{Message: "完成"})
+		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
 	}
 }
 
 func AdminDelete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Query("id"))
 	if id < 1 || err != nil {
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
 	param := &system.SysAdmin{}
 	param.ID = uint(id)
 	if err := param.Bind(param).Delete(param).Error; err != nil {
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "删除失败(" + err.Error() + ")"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "删除失败(" + err.Error() + ")"})
 	} else {
-		c.JSON(http.StatusOK, bind.ErrorMessage{Message: "完成"})
+		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
 	}
 }
 
@@ -93,7 +93,7 @@ func AdminAccessLog(c *gin.Context) {
 	param := &bindSysAccessParam{}
 	if err := c.BindQuery(&param); err != nil {
 		log.Println(err)
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
 	var total int64

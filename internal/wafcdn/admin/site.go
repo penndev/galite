@@ -15,13 +15,13 @@ import (
 func SiteAdd(c *gin.Context) {
 	param := &model.Site{}
 	if err := c.BindJSON(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误" + err.Error()})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	if err := param.Bind(param).Create(param).Error; err != nil {
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "创建失败(" + err.Error() + ")"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "创建失败(" + err.Error() + ")"})
 	} else {
-		c.JSON(http.StatusOK, bind.ErrorMessage{Message: "完成"})
+		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
 	}
 }
 
@@ -30,7 +30,7 @@ func SiteList(c *gin.Context) {
 	param := &bindSiteParam{}
 	if err := c.BindQuery(&param); err != nil {
 		log.Println(err)
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
 	var total int64
@@ -46,13 +46,13 @@ func SiteUpdate(c *gin.Context) {
 	param := &model.Site{}
 	if err := c.BindJSON(&param); err != nil {
 		log.Println(err)
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
 	if err := param.Bind(param).Updates(param).Error; err != nil {
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "更新失败(" + err.Error() + ")"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "更新失败(" + err.Error() + ")"})
 	} else {
-		c.JSON(http.StatusOK, bind.ErrorMessage{Message: "完成"})
+		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
 	}
 }
 
@@ -60,14 +60,14 @@ func SiteUpdate(c *gin.Context) {
 func SiteDelete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Query("id"))
 	if id < 1 || err != nil {
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
 	param := &model.Site{}
 	param.ID = uint(id)
 	if err := param.Bind(param).Delete(param).Error; err != nil {
-		c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "删除失败(" + err.Error() + ")"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "删除失败(" + err.Error() + ")"})
 	} else {
-		c.JSON(http.StatusOK, bind.ErrorMessage{Message: "完成"})
+		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
 	}
 }

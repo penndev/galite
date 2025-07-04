@@ -23,31 +23,31 @@ func JWTAuth(jwtSecret []byte) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		tokenStr := c.Request.Header.Get("x-token")
 		if tokenStr == "" {
-			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "登录验证失败01"})
+			c.JSON(http.StatusUnauthorized, bind.Message{Message: "登录验证失败01"})
 			c.Abort()
 			return
 		}
 		token, err := jwt.Parse(tokenStr, keyFunc)
 		if err != nil || !token.Valid {
-			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "登录验证失败02"})
+			c.JSON(http.StatusUnauthorized, bind.Message{Message: "登录验证失败02"})
 			c.Abort()
 			return
 		}
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
-			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "登录验证失败03"})
+			c.JSON(http.StatusUnauthorized, bind.Message{Message: "登录验证失败03"})
 			c.Abort()
 			return
 		}
 		sub, err := claims.GetSubject()
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "登录验证失败04"})
+			c.JSON(http.StatusUnauthorized, bind.Message{Message: "登录验证失败04"})
 			c.Abort()
 			return
 		}
 		adminID, err := strconv.Atoi(sub) // 验证 sub 是否为数字
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "登录验证失败05"})
+			c.JSON(http.StatusUnauthorized, bind.Message{Message: "登录验证失败05"})
 			c.Abort()
 			return
 		}

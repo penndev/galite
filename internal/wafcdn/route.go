@@ -28,8 +28,12 @@ func InitAdminRoute(route *ginhelper.RouterGroup) {
 	route.POST("/domain", admin.DomainAdd)
 	route.PUT("/domain", admin.DomainUpdate)
 	route.DELETE("/domain", admin.DomainDelete)
-
 	// 查看缓存列表
 	route.GET("/cache", admin.CacheList)
 	route.DELETE("/cache", admin.CacheDelete)
+
+	route.GET("/openrsty/status", admin.OpenrestyStatus)
+	route.PUT("/openrsty/start", admin.OpenrestyStart)
+	route.PUT("/openrsty/stop", admin.OpenrestyStop)
+	route.PUT("/openrsty/reload", admin.OpenrestyReload)
 }

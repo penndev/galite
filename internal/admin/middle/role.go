@@ -14,17 +14,17 @@ func Role() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		admin, err := system.SysAdminGetByID(c.GetInt("adminID"))
 		if err != nil {
-			c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败(1)"})
+			c.JSON(http.StatusBadRequest, bind.Message{Message: "用户鉴权失败(1)"})
 			c.Abort()
 			return
 		}
 		if admin.Status != 1 {
-			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "用户状态错误"})
+			c.JSON(http.StatusUnauthorized, bind.Message{Message: "用户状态错误"})
 			c.Abort()
 			return
 		}
 		if admin.SysRoleID != nil && *admin.SysRoleID != 0 && admin.SysRole.Status != 1 {
-			c.JSON(http.StatusUnauthorized, bind.ErrorMessage{Message: "角色状态错误"})
+			c.JSON(http.StatusUnauthorized, bind.Message{Message: "角色状态错误"})
 			c.Abort()
 			return
 		}
@@ -40,7 +40,7 @@ func Role() gin.HandlerFunc {
 				}
 			}
 			if !pass {
-				c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "用户鉴权失败(2)"})
+				c.JSON(http.StatusBadRequest, bind.Message{Message: "用户鉴权失败(2)"})
 				c.Abort()
 				return
 			}
@@ -64,7 +64,7 @@ func Role() gin.HandlerFunc {
 			// }
 			access.Status = c.Writer.Status()
 			if err := access.Bind(access).Create(access).Error; err != nil {
-				c.JSON(http.StatusBadRequest, bind.ErrorMessage{Message: "日志记录失败:" + err.Error()})
+				c.JSON(http.StatusBadRequest, bind.Message{Message: "日志记录失败:" + err.Error()})
 				c.Abort()
 				return
 			}
