@@ -59,3 +59,19 @@ func (b *bindCacheParam) Param() *model.Cache {
 	m.Bind(m, w, b)
 	return m
 }
+
+// 获取用户列表
+type bindLogParam struct {
+	orm.BindListParam
+	Name string `form:"name" binding:"omitempty,min=2,max=64"`
+}
+
+// 处理列表请求数据。
+func (b *bindLogParam) Param() *model.Log {
+	m := &model.Log{}
+	w := func(orm *gorm.DB) *gorm.DB {
+		return orm.Where(m)
+	}
+	m.Bind(m, w, b)
+	return m
+}

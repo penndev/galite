@@ -13,6 +13,7 @@ func InitApiRoute(r *ginhelper.RouterGroup) {
 	r.GET("/domain", handleDomain)      // 配置域名信息
 	r.GET("/cache", api.HandleGetCache) // 查询缓存信息
 	r.PUT("/cache", api.HandlePutCache) // 缓存文件成功报告
+	r.PUT("/log", api.HandlePutLog)     // 缓存文件成功报告
 }
 
 // 注册admin接口
@@ -31,6 +32,8 @@ func InitAdminRoute(route *ginhelper.RouterGroup) {
 	// 查看缓存列表
 	route.GET("/cache", admin.CacheList)
 	route.DELETE("/cache", admin.CacheDelete)
+	// 查看日志列表
+	route.GET("/log", admin.LogList)
 
 	route.GET("/openrsty/status", admin.OpenrestyStatus)
 	route.PUT("/openrsty/start", admin.OpenrestyStart)

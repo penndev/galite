@@ -9,6 +9,7 @@ import (
 	"github.com/penndev/galite/internal"
 	"github.com/penndev/galite/internal/config"
 	"github.com/penndev/galite/internal/lib"
+	"github.com/penndev/galite/internal/model"
 	"github.com/penndev/galite/internal/wafcdn"
 )
 
@@ -24,9 +25,11 @@ func main() {
 	if err := config.InitGorm(); err != nil {
 		log.Panic(err)
 	}
+	model.Migration() // 每次启动都需要同步数据库结构 表自动迁移
 	if err := config.InitRedis(); err != nil {
 		log.Panic(err)
 	}
+
 	// 跟随程序启动openresty
 	lib.Nginx = lib.NginxManager{
 		Binary:     os.Getenv("NGINX_BINARY"),
