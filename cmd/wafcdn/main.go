@@ -13,6 +13,28 @@ import (
 	"github.com/penndev/galite/internal/wafcdn"
 )
 
+func setNginx() {
+	// 跟随程序启动openresty
+	binary := os.Getenv("NGINX_BINARY")
+	if binary == "" {
+		binary = "openresty"
+	}
+	prefix := os.Getenv("NGINX_PREFIX")
+	if prefix == "" {
+		prefix = "./"
+	}
+	lib.Nginx = lib.NginxManager{
+		Binary:     binary,
+		Prefix:     prefix,
+		OutputFile: os.Getenv("NGINX_OUTPUT"),
+	}
+	if err := lib.Nginx.Reload(); err != nil {
+		if err := lib.Nginx.Start(); err != nil {
+			log.Panic(err)
+		}
+	}
+}
+
 func main() {
 	// 初始化各种组件
 	defer config.Defer()
@@ -29,19 +51,9 @@ func main() {
 	if err := config.InitRedis(); err != nil {
 		log.Panic(err)
 	}
+	model.Runner() // 异步执行定时任务
+	setNginx()     // 启动nginx
 
-	// 跟随程序启动openresty
-	lib.Nginx = lib.NginxManager{
-		Binary:     os.Getenv("NGINX_BINARY"),
-		Prefix:     os.Getenv("NGINX_PREFIX"),
-		OutputFile: os.Getenv("NGINX_OUTPUT"),
-	}
-	if err := lib.Nginx.Reload(); err != nil {
-		if err := lib.Nginx.Start(); err != nil {
-			log.Panic(err)
-		}
-	}
-	defer lib.Nginx.Stop()
 	// 启动Http服务器 高性能版
 	route := internal.InitRoute()                    // 挂载默认接口路由
 	route.Static("/-admin", "./dist")                // 挂载后台管理UI

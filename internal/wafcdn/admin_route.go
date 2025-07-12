@@ -2,24 +2,12 @@ package wafcdn
 
 import (
 	"github.com/penndev/galite/internal/wafcdn/admin"
-	"github.com/penndev/galite/internal/wafcdn/api"
 	"github.com/penndev/galite/pkg/ginhelper"
 )
-
-// 注册api接口
-// wafcdn.InitApiRoute(engine.Group("/@wafcdn"))
-func InitApiRoute(r *ginhelper.RouterGroup) {
-	r.GET("/ssl", handleSSL)            // 获取证书配置信息
-	r.GET("/domain", handleDomain)      // 配置域名信息
-	r.GET("/cache", api.HandleGetCache) // 查询缓存信息
-	r.PUT("/cache", api.HandlePutCache) // 缓存文件成功报告
-	r.PUT("/log", api.HandlePutLog)     // 缓存文件成功报告
-}
 
 // 注册admin接口
 // wafcdn.InitAdminRoute(engine.Group("/wafcdn"))
 func InitAdminRoute(route *ginhelper.RouterGroup) {
-	// wafcdn
 	route.GET("/site", admin.SiteList)
 	route.POST("/site", admin.SiteAdd)
 	route.PUT("/site", admin.SiteUpdate)
@@ -32,7 +20,11 @@ func InitAdminRoute(route *ginhelper.RouterGroup) {
 	// 查看缓存列表
 	route.GET("/cache", admin.CacheList)
 	route.DELETE("/cache", admin.CacheDelete)
-	// 查看日志列表
+	route.GET("/cache/delete", admin.CacheList)
+	route.GET("/cache/delete/list", admin.CacheDeleteList)
+	route.PUT("/cache/delete/list", admin.CacheDeleteAdd)
+
+	// 查看访问日志列表
 	route.GET("/log", admin.LogList)
 
 	route.GET("/openrsty/status", admin.OpenrestyStatus)

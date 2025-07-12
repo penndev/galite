@@ -68,10 +68,14 @@ func (cache *Cache) CacheKey() string {
 	return fmt.Sprintf("%d:%s:%s", cache.SiteID, cache.Uri, cache.Method)
 }
 
-func (cache *Cache) SetCache(cacheKey string) error {
-	// 设置缓存日期。到底多久过期。
+func (cache *Cache) GetRedisCache() error {
+	return lib.Redis.GetStruct(cache.CacheKey(), cache)
+}
+
+// 缓存需要的数据，缓存到数据库，因为多次调用所以放置model中
+func (cache *Cache) SetRedisCache() error {
 	return lib.Redis.SetStruct(
-		cacheKey,
+		cache.CacheKey(),
 		Cache{
 			Header: cache.Header,
 			Path:   cache.Path,
@@ -81,17 +85,22 @@ func (cache *Cache) SetCache(cacheKey string) error {
 	)
 }
 
-// 删除一个文件应该如何删除呢
-// 首先肯定要开启事务来达成一个原子性的操作
-// 然后在数据库插入成功后再修改完整的文件名
-// 不然文件名称修改后但是最新的文件再次被删除了。
-func CacheDeleteByIds(ids []uint) error {
-	var caches []Cache
+func CacheGetByIds(ids []uint) []Cache {
 	m := &Cache{}
+	var caches []Cache
 	m.Bind(m, func(db *gorm.DB) *gorm.DB {
 		db.Where("id IN ?", ids)
 		return db
 	}).Find(&caches)
+	return caches
+}
+
+// 删除一个文件应该如何删除呢
+// 首先肯定要开启事务来达成一个原子性的操作
+// 然后在数据库插入成功后再修改完整的文件名
+// 不然文件名称修改后但是最新的文件再次被删除了。
+func CacheDeleteByData(caches []Cache) error {
+	m := &Cache{}
 	m.Gorm().Transaction(func(tx *gorm.DB) error {
 		for _, cache := range caches {
 			tx.Delete(&cache)

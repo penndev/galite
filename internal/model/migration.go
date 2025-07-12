@@ -15,3 +15,7 @@ func Migration() {
 
 	modelWafCdn.Migration(orm.DB)
 }
+
+func Runner() {
+	go modelWafCdn.CacheDeleteRunner()
+}

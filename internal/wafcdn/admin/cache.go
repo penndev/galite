@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,13 +13,11 @@ import (
 func CacheList(c *gin.Context) {
 	param := &bindCacheParam{}
 	if err := c.BindQuery(&param); err != nil {
-		log.Println(err)
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
 	var total int64
 	var list []model.Cache
-
 	m := param.Param() //处理筛选
 	m.List(&total, &list)
 	c.JSON(http.StatusOK, bind.DataList{Total: total, Data: list})
@@ -29,13 +26,39 @@ func CacheList(c *gin.Context) {
 // 删除文件如何保持 原子性。
 func CacheDelete(c *gin.Context) {
 	ids := c.QueryArray("ids")
-	idInt, err := util.StrConvArr[uint](ids)
-	model.CacheDeleteByIds(idInt)
+	uids, err := util.ArrStrConv[uint](ids)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
 		return
 	}
+	model.CacheDeleteByData(model.CacheGetByIds(uids))
 	c.JSON(http.StatusOK, bind.Message{
 		Message: "完成",
 	})
+}
+
+func CacheDeleteList(c *gin.Context) {
+	param := &bindCacheDeleteParam{}
+	if err := c.BindQuery(&param); err != nil {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		return
+	}
+	var total int64
+	var list []model.CacheDelete
+	m := param.Param() //处理筛选
+	m.List(&total, &list)
+	c.JSON(http.StatusOK, bind.DataList{Total: total, Data: list})
+}
+
+func CacheDeleteAdd(c *gin.Context) {
+	param := &model.CacheDelete{}
+	if err := c.BindJSON(&param); err != nil {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
+		return
+	}
+	if err := param.Bind(param).Create(param).Error; err != nil {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "创建失败(" + err.Error() + ")"})
+	} else {
+		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
+	}
 }

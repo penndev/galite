@@ -9,4 +9,5 @@ func Migration(db *gorm.DB) {
 	db.AutoMigrate(&Cache{})
 	db.AutoMigrate(&Site{})
 	db.AutoMigrate(&Domain{})
+	db.AutoMigrate(&CacheDelete{})
 }

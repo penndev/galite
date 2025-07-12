@@ -78,3 +78,7 @@ func (m *Model) List(total *int64, data any) error {
 	}
 	return nil
 }
+
+func (m *Model) Save() {
+	m.Gorm().Save(m.bindModel)
+}

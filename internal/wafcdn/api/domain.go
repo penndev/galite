@@ -1,4 +1,4 @@
-package wafcdn
+package api
 
 import (
 	"github.com/gin-gonic/gin"
@@ -8,7 +8,7 @@ import (
 // 对nginx提供接口 获取证书配置
 // @url=/@wafcdn/domain?host=@host
 // @return 配置信息
-func handleSSL(c *gin.Context) {
+func HandleSSL(c *gin.Context) {
 	host := c.Query("host")
 	if host == "" {
 		c.JSON(400, gin.H{
@@ -33,7 +33,7 @@ func handleSSL(c *gin.Context) {
 // 对nginx提供接口 获取域名配置信息
 // @url=/@wafcdn/domain?host=@host
 // @return 配置信息
-func handleDomain(c *gin.Context) {
+func HandleDomain(c *gin.Context) {
 	if c.Query("host") == "" {
 		c.JSON(400, gin.H{
 			"error": "host not found",
