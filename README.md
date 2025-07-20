@@ -9,12 +9,11 @@
 - 请求日志
 
 
-## Gorm 
+## 数据库 
 
-> 数据库使用gorm配置详情请参考官方文档
+> 数据库使用[gorm](https://gorm.io/)配置详情请参考官方文档
 
-**连接**
-
+**配置连接示例**
 
 - mysql: `mysql://root:123456@tcp(127.0.0.1:3306)/galite?charset=utf8mb4&parseTime=True&loc=Local`
 - mariadb: `mariadb://root:123456@tcp(127.0.0.1:3306)/galite?charset=utf8mb4&parseTime=True&loc=Local`
@@ -28,6 +27,14 @@
 - `info` 包含普通执行sql
 - `warn` 慢日志警告等
 - `error`
+
+## 缓存
+
+**连接**
+
+- redis: `redis://default:@127.0.0.1:6379/1`
+- ttlmap: `ttlmap://memory`
+
 
 ## 部署
 

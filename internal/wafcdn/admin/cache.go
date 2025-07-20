@@ -26,7 +26,7 @@ func CacheList(c *gin.Context) {
 // 删除文件如何保持 原子性。
 func CacheDelete(c *gin.Context) {
 	ids := c.QueryArray("ids")
-	uids, err := util.ArrStrConv[uint](ids)
+	uids, err := util.StrsConv[uint](ids)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
 		return

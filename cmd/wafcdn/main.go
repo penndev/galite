@@ -48,7 +48,7 @@ func main() {
 		log.Panic(err)
 	}
 	model.Migration() // 每次启动都需要同步数据库结构 表自动迁移
-	if err := config.InitRedis(); err != nil {
+	if err := config.InitCache(); err != nil {
 		log.Panic(err)
 	}
 	model.Runner() // 异步执行定时任务

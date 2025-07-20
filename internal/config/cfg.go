@@ -36,7 +36,6 @@ type Config struct {
 	Logger   Logger   // 日志的处理
 	Database Database // 数据库配置信息
 	Cache    Cache    // 缓存配置信息
-	Badger   Badger   // 缓存配置信息
 }
 
 var cfg Config

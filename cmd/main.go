@@ -21,11 +21,7 @@ func main() {
 	if err := config.InitGorm(); err != nil {
 		log.Panic(err)
 	}
-	if err := config.InitRedis(); err != nil {
-		log.Panic(err)
-	}
-
-	if err := config.InitBadger(); err != nil {
+	if err := config.InitCache(); err != nil {
 		log.Panic(err)
 	}
 

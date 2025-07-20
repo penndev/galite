@@ -47,9 +47,6 @@ func InitEnv() error {
 		Cache: Cache{
 			Dsn: os.Getenv("CACHE_URL"),
 		},
-		Badger: Badger{
-			Dsn: os.Getenv("BADGER_URL"),
-		},
 	}
 	return nil
 }

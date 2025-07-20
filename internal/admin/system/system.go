@@ -2,19 +2,23 @@ package system
 
 import (
 	"bytes"
-	"context"
+	"encoding/base64"
 	"errors"
+	"image/color"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/penndev/galite/internal/admin/bind"
 	"github.com/penndev/galite/internal/admin/model/system"
 	"github.com/penndev/galite/internal/config"
 	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/internal/logger"
+	"github.com/penndev/galite/pkg/util"
 	"github.com/penndev/gopkg/captcha"
 	"github.com/penndev/gopkg/otp"
 	"go.uber.org/zap"
@@ -23,36 +27,26 @@ import (
 )
 
 func Captcha(c *gin.Context) {
-	vd, err := captcha.NewImg()
+	// - 使用redis自定义存储验证码
+	randText := captcha.RandText(4)
+	buf, err := captcha.NewPngImg(captcha.Option{
+		Width:     120,
+		Height:    30,
+		DPI:       90,
+		Text:      randText,
+		FontSize:  20,
+		TextColor: color.RGBA{0, 0, 0, 255},
+	})
 	if err != nil {
 		logger.L.Error("Captcha", zap.Error(err))
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "获取验证码出错"})
 		return
 	}
-	id := vd.ID
-	data := vd.PngBase64
-
-	// - 使用redis自定义存储验证码
-	// randText := captcha.RandText(4)
-	// buf, err := captcha.NewPngImg(captcha.Option{
-	// 	Width:     120,
-	// 	Height:    30,
-	// 	DPI:       90,
-	// 	Text:      randText,
-	// 	FontSize:  20,
-	// 	TextColor: color.RGBA{0, 0, 0, 255},
-	// })
-	// if err != nil {
-	// 	logger.L.Error("Captcha", zap.Error(err))
-	// 	c.JSON(http.StatusBadRequest, bind.Message{Message: "获取验证码出错"})
-	// 	return
-	// }
-	// data := "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
-	// id := uuid.New().String()
-	// cmd := lib.Redis.Set(context.TODO(), "captcha:"+id, randText, 5*time.Minute)
-	// if err := cmd.Err(); err != nil {
-	// 	logger.L.Error("Redis错误", zap.Error(err))
-	// }
+	data := "data:image/png;base64," + base64.StdEncoding.EncodeToString(buf.Bytes())
+	id := uuid.New().String()
+	if err := lib.Cache.SetAny("captcha:"+id, randText, 5*time.Minute); err != nil {
+		logger.L.Error("Redis错误", zap.Error(err))
+	}
 
 	c.JSON(http.StatusOK, bindCaptcha{
 		CaptchaID:  id,
@@ -91,20 +85,14 @@ func Login(c *gin.Context) {
 	}
 
 	// 验证验证码
-	// captcha, err := lib.Redis.Get(context.Background(), "captcha:"+request.CaptchaId).Result()
-	// if err != nil {
-	// 	logger.L.Warn("Redis错误", zap.Error(err))
-	// 	c.JSON(http.StatusForbidden, bind.Message{Message: "验证码错误"})
-	// 	return
-	// }
+	var captcha string
+	if err := lib.Cache.GetAny("captcha:"+request.CaptchaId, &captcha); err != nil {
+		logger.L.Warn("Redis错误", zap.Error(err))
+		c.JSON(http.StatusForbidden, bind.Message{Message: "验证码错误"})
+		return
+	}
 
-	// if !strings.EqualFold(captcha, request.Captcha) {
-	// 	c.JSON(http.StatusForbidden, bind.Message{Message: "验证码错误"})
-	// 	return
-	// }
-
-	// 验证验证码
-	if !captcha.Verify(request.CaptchaId, request.Captcha) {
+	if !strings.EqualFold(captcha, request.Captcha) {
 		c.JSON(http.StatusForbidden, bind.Message{Message: "验证码错误"})
 		return
 	}
@@ -139,14 +127,13 @@ func Login(c *gin.Context) {
 	// 登录需要二次验证时，先将用户信息存入 Redis，等待 OTP 验证
 	if res.OtpStatus == 1 {
 		key := "otp:login:" + strconv.Itoa(int(res.ID))
-		data, err := lib.Encode(res)
+		data, err := util.Encode(res)
 		if err != nil {
 			logger.L.Error("lib.Encode", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, bind.Message{Message: "编码失败"})
 			return
 		}
-		cmd := lib.Redis.Set(context.TODO(), key, data, 5*time.Minute)
-		if err := cmd.Err(); err != nil {
+		if err := lib.Cache.SetAny(key, data, 5*time.Minute); err != nil {
 			logger.L.Error("Redis错误", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, bind.Message{Message: "Redis错误"})
 			return
@@ -180,14 +167,14 @@ func LoginOTP(c *gin.Context) {
 		return
 	}
 	key := "otp:login:" + strconv.Itoa(request.ID)
-	data, err := lib.Redis.Get(context.TODO(), key).Bytes()
-	if err != nil {
+	var data []byte
+	if err := lib.Cache.GetAny(key, &data); err != nil {
 		logger.L.Warn("Redis错误", zap.Error(err))
 		c.JSON(http.StatusForbidden, bind.Message{Message: "登录信息已过期，请重新登录"})
 		return
 	}
 	var res system.SysAdmin
-	if err := lib.Decode(bytes.NewBuffer(data), &res); err != nil {
+	if err := util.Decode(bytes.NewBuffer(data), &res); err != nil {
 		logger.L.Error("lib.Decode", zap.Error(err))
 		c.JSON(http.StatusInternalServerError, bind.Message{Message: "解码失败"})
 		return

@@ -3,8 +3,6 @@ package config
 import (
 	"log"
 	"time"
-
-	"github.com/penndev/galite/internal/lib"
 )
 
 var StartTime time.Time = time.Now()
@@ -22,27 +20,7 @@ func Init() {
 	if err := InitGorm(); err != nil {
 		log.Panic(err)
 	}
-	if err := InitRedis(); err != nil {
+	if err := InitCache(); err != nil {
 		log.Panic(err)
 	}
-	if err := InitBadger(); err != nil {
-		log.Panic(err)
-	}
-}
-
-func InitBadger() error {
-	// 初始化keyVal文件存储系统
-	if err := lib.InitBadger(cfg.Badger.Dsn); err != nil {
-		return err
-	}
-	closeList = append(closeList, lib.Badger)
-	return nil
-}
-
-func InitRedis() error {
-	if err := lib.InitRedis(cfg.Cache.Dsn); err != nil {
-		return err
-	}
-	closeList = append(closeList, lib.Redis)
-	return nil
 }

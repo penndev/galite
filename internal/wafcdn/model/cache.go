@@ -1,7 +1,6 @@
 package model
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -69,12 +68,12 @@ func (cache *Cache) CacheKey() string {
 }
 
 func (cache *Cache) GetRedisCache() error {
-	return lib.Redis.GetStruct(cache.CacheKey(), cache)
+	return lib.Cache.GetAny(cache.CacheKey(), cache)
 }
 
 // 缓存需要的数据，缓存到数据库，因为多次调用所以放置model中
 func (cache *Cache) SetRedisCache() error {
-	return lib.Redis.SetStruct(
+	return lib.Cache.SetAny(
 		cache.CacheKey(),
 		Cache{
 			Header: cache.Header,
@@ -104,7 +103,7 @@ func CacheDeleteByData(caches []Cache) error {
 	m.Gorm().Transaction(func(tx *gorm.DB) error {
 		for _, cache := range caches {
 			tx.Delete(&cache)
-			lib.Redis.Del(context.TODO(), cache.CacheKey())
+			lib.Cache.Delete(cache.CacheKey())
 			if err := os.Remove(cache.Path); err != nil {
 				logger.L.Warn("删除失败", zap.Error(err))
 			}

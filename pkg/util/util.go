@@ -5,11 +5,11 @@ import (
 	"strconv"
 )
 
-type Numeric interface {
-	~int | ~int16 | ~int32 | ~int64 | ~uint | ~uint16 | ~uint32 | ~uint64
+type Number interface {
+	int | int16 | int32 | int64 | uint | uint16 | uint32 | uint64
 }
 
-func StrConv[R Numeric](str string) (R, error) {
+func StrConv[R Number](str string) (R, error) {
 	var zero R
 	switch any(zero).(type) {
 	case int:
@@ -42,7 +42,7 @@ func StrConv[R Numeric](str string) (R, error) {
 }
 
 // 字符串切片批量转换为 []R
-func ArrStrConv[R Numeric](strs []string) ([]R, error) {
+func StrsConv[R Number](strs []string) ([]R, error) {
 	out := make([]R, 0, len(strs))
 	for _, s := range strs {
 		v, err := StrConv[R](s)

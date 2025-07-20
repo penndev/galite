@@ -28,7 +28,7 @@ func CacheDeleteRunner() {
 		}).First(cacheDelete).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				time.Sleep(10 * time.Second)
-				log.Println("没找到记录重新循环(正式环境关掉): ", err)
+				// log.Println("没找到记录重新循环(正式环境关掉): ", err)
 				continue
 			}
 			log.Println("Runner: ", err)
