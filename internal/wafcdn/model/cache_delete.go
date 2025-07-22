@@ -20,6 +20,7 @@ type CacheDelete struct {
 }
 
 func CacheDeleteRunner() {
+	timeSleep := 10 * time.Second
 	for {
 		cacheDelete := &CacheDelete{}
 		if err := cacheDelete.Bind(cacheDelete, func(db *gorm.DB) *gorm.DB {
@@ -27,7 +28,7 @@ func CacheDeleteRunner() {
 			return db
 		}).First(cacheDelete).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				time.Sleep(10 * time.Second)
+				time.Sleep(timeSleep)
 				// log.Println("没找到记录重新循环(正式环境关掉): ", err)
 				continue
 			}
@@ -50,7 +51,7 @@ func CacheDeleteRunner() {
 			var caches []Cache
 			if err := action.Limit(1000).Find(&caches).Error; err != nil {
 				log.Println(err)
-				time.Sleep(2 * time.Second)
+				time.Sleep(timeSleep)
 				break
 			}
 			CacheDeleteByData(caches)
@@ -62,8 +63,8 @@ func CacheDeleteRunner() {
 			if totalCurrent == 0 {
 				break //全部缓存完成
 			}
-			// 删除文件
-			time.Sleep(500 * time.Millisecond) //不限制速率。
+			// 删除文件 需要增加休眠时间
+			time.Sleep(500 * time.Millisecond)
 		}
 		cacheDelete.Status = true
 		cacheDelete.Save()

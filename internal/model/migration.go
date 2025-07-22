@@ -12,10 +12,11 @@ func Migration() {
 	orm.DB.AutoMigrate(&system.SysAdmin{})
 	orm.DB.AutoMigrate(&system.SysRole{})
 	orm.DB.AutoMigrate(&system.SysAccessLog{})
-
+	// 注册wafcdn的数据库
 	modelWafCdn.Migration(orm.DB)
 }
 
+// 进行后台任务处理
 func Runner() {
 	go modelWafCdn.CacheDeleteRunner()
 }

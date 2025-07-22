@@ -26,6 +26,7 @@ func InitLogger() error {
 			return err
 		}
 	}
+	// 注入日志实例
 	loggerNal.InitLogger(mainLog)
 	return nil
 }
