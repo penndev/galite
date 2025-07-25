@@ -33,7 +33,12 @@ func (t *ttlmapClient) GetAny(k string, s any) error {
 }
 
 func (t *ttlmapClient) SetAny(k string, s any, exp time.Duration) error {
-	t.Set(k, s, exp)
+	if exp < 1 {
+		exp := 24 * time.Hour
+		t.Set(k, s, exp)
+	} else {
+		t.Set(k, s, exp)
+	}
 	return nil
 }
 

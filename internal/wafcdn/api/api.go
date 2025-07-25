@@ -12,6 +12,8 @@ import (
 	"gorm.io/gorm"
 )
 
+var i = 1
+
 func HandleGetCache(c *gin.Context) {
 	param := &model.Cache{}
 	if err := c.BindQuery(param); err != nil {
@@ -19,18 +21,21 @@ func HandleGetCache(c *gin.Context) {
 		c.JSON(400, gin.H{"message": "参数错误" + err.Error()})
 		return
 	}
-	if err := param.GetRedisCache(); err != nil {
+
+	if err := param.GetCache(); err == nil {
 		c.JSON(http.StatusOK, param)
 		return
 	}
+
 	err := param.Bind(param).Where("site_id = ? and method = ? and uri = ?", param.SiteID, param.Method, param.Uri).First(param).Error
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"Message": "查询失败(" + err.Error() + ")"})
 		return
 	} else { // 保存缓存结果 永久缓存
-		if err := param.SetRedisCache(); err != nil {
+		if err := param.SetCache(); err != nil {
 			logger.L.Warn("保存错误", zap.Error(err))
 		}
+		// param.GetCache()
 		c.JSON(http.StatusOK, param)
 	}
 }
@@ -51,7 +56,7 @@ func HandlePutCache(c *gin.Context) {
 		if err := os.Rename(param.Path+".lock", param.Path); err != nil {
 			return err
 		}
-		if err := param.SetRedisCache(); err != nil {
+		if err := param.SetCache(); err != nil {
 			return err
 		}
 		return nil
@@ -69,8 +74,9 @@ func HandlePutLog(c *gin.Context) {
 	param := &model.Log{}
 	if err := c.BindJSON(param); err != nil {
 		log.Println("参数错误", err.Error())
-		c.JSON(400, gin.H{"message": "参数错误" + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"message": "参数错误" + err.Error()})
 		return
 	}
 	param.Gorm().Create(param)
+	c.JSON(http.StatusOK, gin.H{"Message": "完成"})
 }

@@ -67,19 +67,16 @@ func (cache *Cache) CacheKey() string {
 	return fmt.Sprintf("%d:%s:%s", cache.SiteID, cache.Uri, cache.Method)
 }
 
-func (cache *Cache) GetRedisCache() error {
-	return lib.Cache.GetAny(cache.CacheKey(), cache)
+func (cache *Cache) GetCache() error {
+	err := lib.Cache.GetAny(cache.CacheKey(), cache)
+	return err
 }
 
 // 缓存需要的数据，缓存到数据库，因为多次调用所以放置model中
-func (cache *Cache) SetRedisCache() error {
+func (cache *Cache) SetCache() error {
 	return lib.Cache.SetAny(
 		cache.CacheKey(),
-		Cache{
-			Header: cache.Header,
-			Path:   cache.Path,
-			Time:   cache.Time,
-		},
+		*cache,
 		-1,
 	)
 }

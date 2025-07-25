@@ -18,8 +18,8 @@
 - mysql: `mysql://root:123456@tcp(127.0.0.1:3306)/galite?charset=utf8mb4&parseTime=True&loc=Local`
 - mariadb: `mariadb://root:123456@tcp(127.0.0.1:3306)/galite?charset=utf8mb4&parseTime=True&loc=Local`
 - postgres: `postgres://postgres:123456@localhost:5432/galite`
-- sqlserver `sqlserver://gorm:LoremIpsum86@localhost:9930?database=gorm`
-- sqlite: `sqlite://sqlite.db`
+- sqlserver `sqlserver://root:123456@localhost:9930?database=galite`
+- sqlite: `sqlite://galite.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(3000)`
 
 **日志**
 > dev模式日志驱动为 `logger.Default`  prod模式驱动为`zap.Logger` 默认日志级别为`info`

@@ -16,6 +16,14 @@ type SiteSecurity struct {
 		ExpireArgs string `json:"expire_args"`
 		SignArgs   string `json:"sign_args"`
 	} `json:"sign"`
+	Cors struct {
+		Status      bool   `json:"status"`
+		Origin      string `json:"origin"`
+		Method      string `json:"method"`
+		Header      string `json:"header"`
+		Credentials string `json:"credentials"`
+		Age         int    `json:"age"`
+	} `json:"cors"`
 }
 
 type SiteStatic struct {

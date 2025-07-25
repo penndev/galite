@@ -8,6 +8,7 @@
 *.log
 *.test
 *.out
+*.db*
 
 go.work
 go.work.sum
