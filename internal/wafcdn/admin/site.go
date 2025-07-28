@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/penndev/galite/internal/admin/bind"
 	"github.com/penndev/galite/internal/wafcdn/model"
+	"github.com/penndev/gopkg/ip2region"
 )
 
 // 添加新的站点
@@ -70,4 +71,67 @@ func SiteDelete(c *gin.Context) {
 	} else {
 		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
 	}
+}
+
+// 获取 国家与省份
+func IPRegion(c *gin.Context) {
+	var region ip2region.IPRegion
+	c.BindQuery(&region)
+
+	// 筛选数据列表
+	var current *ip2region.Region
+	var data []string // 返回数据内容
+
+	// 如果未选择国家，返回所有国家名称
+	if region.Country == "" {
+		for _, item := range ip2region.RegionList {
+			data = append(data, item.Name)
+		}
+		c.JSON(http.StatusOK, bind.DataList{Data: data})
+		return
+	} else {
+		for _, item := range ip2region.RegionList {
+			if region.Country == item.Name {
+				current = &item
+				break
+			}
+		}
+	}
+
+	// 如果未选择省份，返回国家下的所有省份
+	if region.Province == "" {
+		for _, province := range current.Children {
+			data = append(data, province.Name)
+		}
+		c.JSON(http.StatusOK, bind.DataList{Data: data})
+		return
+	} else {
+		for _, item := range current.Children {
+			if region.Province == item.Name {
+				current = &item
+				break
+			}
+		}
+	}
+
+	// 如果未选择城市，返回省份下的所有城市
+	if region.City == "" {
+		for _, child := range current.Children {
+			data = append(data, child.Name)
+		}
+		c.JSON(http.StatusOK, bind.DataList{Data: data})
+		return
+	} else {
+		for _, item := range current.Children {
+			if region.City == item.Name {
+				current = &item
+				break
+			}
+		}
+	}
+
+	for _, child := range current.Children {
+		data = append(data, child.Name)
+	}
+	c.JSON(http.StatusOK, bind.DataList{Data: data})
 }

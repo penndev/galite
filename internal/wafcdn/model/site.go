@@ -1,8 +1,16 @@
 package model
 
-import "github.com/penndev/galite/pkg/orm"
+import (
+	"github.com/penndev/galite/pkg/orm"
+	"github.com/penndev/gopkg/ip2region"
+)
 
 type SiteSecurity struct {
+	Ip struct {
+		Status  bool                 `json:"status"`
+		Region  []ip2region.IPRegion `json:"region"`
+		Allowed bool                 `json:"allowed"`
+	} `json:"ip"`
 	Limit struct {
 		Status  bool `json:"status"`
 		Rate    int  `json:"rate"`    // 限制下载速率 kb/s

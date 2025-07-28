@@ -12,6 +12,8 @@ func InitAdminRoute(route *ginhelper.RouterGroup) {
 	route.POST("/site", admin.SiteAdd)
 	route.PUT("/site", admin.SiteUpdate)
 	route.DELETE("/site", admin.SiteDelete)
+	route.GET("/ipregion", admin.IPRegion)
+
 	// 管理域名
 	route.GET("/domain", admin.DomainList)
 	route.POST("/domain", admin.DomainAdd)
