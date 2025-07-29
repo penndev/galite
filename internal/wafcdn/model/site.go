@@ -1,6 +1,10 @@
 package model
 
 import (
+	"strconv"
+	"time"
+
+	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/pkg/orm"
 	"github.com/penndev/gopkg/ip2region"
 )
@@ -69,4 +73,19 @@ type Site struct {
 
 	// 逻辑关联
 	Domains []Domain // 域名one to many
+}
+
+func GetSiteByID(id uint) (*Site, error) {
+	site := &Site{}
+	site.ID = id
+	cacheKey := "model:site:" + strconv.Itoa(int(id))
+	if err := lib.Cache.GetAny(cacheKey, site); err == nil {
+		return site, err
+	}
+	err := site.Gorm().First(site).Error
+	if err != nil {
+		return nil, err
+	}
+	lib.Cache.SetAny(cacheKey, *site, 10*time.Minute)
+	return site, err
 }

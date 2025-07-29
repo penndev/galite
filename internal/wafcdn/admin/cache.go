@@ -31,7 +31,7 @@ func CacheDelete(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
 		return
 	}
-	model.CacheDeleteByData(model.CacheGetByIds(uids))
+	model.CacheDeleteByData(model.GetCacheByIds(uids))
 	c.JSON(http.StatusOK, bind.Message{
 		Message: "完成",
 	})

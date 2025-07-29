@@ -81,7 +81,7 @@ func (cache *Cache) SetCache() error {
 	)
 }
 
-func CacheGetByIds(ids []uint) []Cache {
+func GetCacheByIds(ids []uint) []Cache {
 	m := &Cache{}
 	var caches []Cache
 	m.Bind(m, func(db *gorm.DB) *gorm.DB {

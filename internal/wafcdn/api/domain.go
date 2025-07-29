@@ -64,6 +64,7 @@ func HandleDomain(c *gin.Context) {
 	if domain.SSL {
 		sslForce = domain.SSLForce
 	}
+
 	c.JSON(200, gin.H{
 		"site":     domain.SiteID,
 		"sslForce": sslForce,
