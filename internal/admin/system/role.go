@@ -1,7 +1,6 @@
 package system
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
@@ -13,7 +12,6 @@ import (
 func RoleList(c *gin.Context) {
 	param := &bindSystemRoleParam{}
 	if err := c.BindQuery(&param); err != nil {
-		log.Println(err)
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
@@ -28,7 +26,6 @@ func RoleList(c *gin.Context) {
 func RoleAdd(c *gin.Context) {
 	param := &system.SysRole{}
 	if err := c.BindJSON(&param); err != nil {
-		log.Println(err)
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
@@ -42,7 +39,6 @@ func RoleAdd(c *gin.Context) {
 func RoleUpdate(c *gin.Context) {
 	param := &system.SysRole{}
 	if err := c.BindJSON(&param); err != nil {
-		log.Println(err)
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}

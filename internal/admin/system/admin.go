@@ -1,7 +1,6 @@
 package system
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
@@ -16,7 +15,6 @@ import (
 func AdminList(c *gin.Context) {
 	param := &bindSystemAdminParam{}
 	if err := c.BindQuery(&param); err != nil {
-		log.Println(err)
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
@@ -53,7 +51,6 @@ func AdminAdd(c *gin.Context) {
 func AdminUpdate(c *gin.Context) {
 	param := &system.SysAdmin{}
 	if err := c.BindJSON(&param); err != nil {
-		log.Println(err)
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
@@ -92,7 +89,6 @@ func AdminAccessLog(c *gin.Context) {
 	c.Set("accessLog", false) // 设置访问日志标志
 	param := &bindSysAccessParam{}
 	if err := c.BindQuery(&param); err != nil {
-		log.Println(err)
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}

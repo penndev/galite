@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -13,7 +12,6 @@ import (
 func LogList(c *gin.Context) {
 	param := &bindLogParam{}
 	if err := c.BindQuery(&param); err != nil {
-		log.Println(err)
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}

@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
@@ -11,7 +10,6 @@ import (
 )
 
 // 添加新的站点
-
 func DomainAdd(c *gin.Context) {
 	param := &model.Domain{}
 	if err := c.BindJSON(&param); err != nil {
@@ -29,7 +27,6 @@ func DomainAdd(c *gin.Context) {
 func DomainList(c *gin.Context) {
 	param := &bindDomainParam{}
 	if err := c.BindQuery(&param); err != nil {
-		log.Println(err)
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
@@ -45,7 +42,6 @@ func DomainList(c *gin.Context) {
 func DomainUpdate(c *gin.Context) {
 	param := &model.Domain{}
 	if err := c.BindJSON(&param); err != nil {
-		log.Println(err)
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}

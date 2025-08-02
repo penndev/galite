@@ -1,7 +1,6 @@
 package admin
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
@@ -30,7 +29,6 @@ func SiteAdd(c *gin.Context) {
 func SiteList(c *gin.Context) {
 	param := &bindSiteParam{}
 	if err := c.BindQuery(&param); err != nil {
-		log.Println(err)
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
@@ -46,7 +44,6 @@ func SiteList(c *gin.Context) {
 func SiteUpdate(c *gin.Context) {
 	param := &model.Site{}
 	if err := c.BindJSON(&param); err != nil {
-		log.Println(err)
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}

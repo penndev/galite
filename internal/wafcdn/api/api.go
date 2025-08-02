@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -14,7 +13,6 @@ import (
 func HandlePutLog(c *gin.Context) {
 	param := &model.Log{}
 	if err := c.BindJSON(param); err != nil {
-		log.Println("参数错误", err.Error())
 		c.JSON(http.StatusBadRequest, gin.H{"message": "参数错误" + err.Error()})
 		return
 	}
