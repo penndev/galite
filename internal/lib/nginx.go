@@ -71,10 +71,9 @@ func (n *NginxManager) TestConfig() error {
 
 	// 无论 err 是否为 nil，都要检查 stderr 内容中是否包含 "syntax is ok" 等
 	output := outBuf.String() + errBuf.String()
-	if !strings.Contains(output, "syntax is ok") {
+	if err != nil || !strings.Contains(output, "syntax is ok") {
 		return fmt.Errorf("nginx config test failed: %s", strings.TrimSpace(output))
 	}
-
 	return err
 }
 

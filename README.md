@@ -8,7 +8,6 @@
 - 访问权限
 - 请求日志
 
-
 ## 数据库 
 
 > 数据库使用[gorm](https://gorm.io/)配置详情请参考官方文档
@@ -17,16 +16,16 @@
 
 - mysql: `mysql://root:123456@tcp(127.0.0.1:3306)/galite?charset=utf8mb4&parseTime=True&loc=Local`
 - mariadb: `mariadb://root:123456@tcp(127.0.0.1:3306)/galite?charset=utf8mb4&parseTime=True&loc=Local`
-- postgres: `postgres://postgres:123456@localhost:5432/galite`
-- sqlserver `sqlserver://root:123456@localhost:9930?database=galite`
-- sqlite: `sqlite://galite.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(3000)`
+- postgres: `postgres://postgres:123456@127.0.0.1:5432/galite`
+- sqlserver `sqlserver://root:123456@127.0.0.1:9930?database=galite`
+- sqlite: `sqlite://galite.db`  // `sqlite://galite.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(3000)`
 
 **日志**
 > dev模式日志驱动为 `logger.Default`  prod模式驱动为`zap.Logger` 默认日志级别为`info`
 
-- `info` 包含普通执行sql
+- `info` 包含普通执行SQL
 - `warn` 慢日志警告等
-- `error`
+- `error` 错误级别
 
 ## 缓存
 
