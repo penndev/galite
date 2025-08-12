@@ -8,10 +8,10 @@ import (
 	"time"
 
 	"github.com/glebarez/sqlite"
+	"github.com/penndev/galite/internal/lib"
 	loggerNal "github.com/penndev/galite/internal/logger"
 	"github.com/penndev/galite/internal/model"
 	loggerPkg "github.com/penndev/galite/pkg/logger"
-	"github.com/penndev/galite/pkg/orm"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
 	"gorm.io/driver/sqlserver"
@@ -46,7 +46,10 @@ func gormDial(dsn string) (gorm.Dialector, error) {
 	return GormDial, nil
 }
 
+// 配置数据库连接信息
 func gormInit(dialector gorm.Dialector, Logger logger.Interface) error {
+	// var err error
+	// var dataBase *gorm.DB
 	dataBase, err := gorm.Open(dialector, &gorm.Config{
 		Logger: Logger, // 重写日志
 		// DisableForeignKeyConstraintWhenMigrating: true, // 禁止物理外键约束
@@ -60,6 +63,7 @@ func gormInit(dialector gorm.Dialector, Logger logger.Interface) error {
 		return err
 	}
 
+	// 连接池，程序关闭时回收
 	closeList = append(closeList, sqlDB)
 
 	// 最大空闲数
@@ -71,7 +75,7 @@ func gormInit(dialector gorm.Dialector, Logger logger.Interface) error {
 	// 最大存活时间
 	// sqlDB.SetConnMaxLifetime(time.Hour)
 
-	orm.DB = dataBase
+	lib.SetGorm(dataBase)
 	return nil
 }
 

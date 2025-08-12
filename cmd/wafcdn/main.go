@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/penndev/galite/internal"
@@ -11,29 +10,8 @@ import (
 	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/internal/model"
 	"github.com/penndev/galite/internal/wafcdn"
+	"github.com/penndev/galite/pkg/util"
 )
-
-func setNginx() {
-	// 跟随程序启动openresty
-	binary := os.Getenv("NGINX_BINARY")
-	if binary == "" {
-		binary = "openresty"
-	}
-	prefix := os.Getenv("NGINX_PREFIX")
-	if prefix == "" {
-		prefix = "./"
-	}
-	lib.Nginx = lib.NginxManager{
-		Binary:     binary,
-		Prefix:     prefix,
-		OutputFile: os.Getenv("NGINX_OUTPUT"),
-	}
-	if err := lib.Nginx.Reload(); err != nil {
-		if err := lib.Nginx.Start(); err != nil {
-			log.Panic(err)
-		}
-	}
-}
 
 func main() {
 	// 初始化各种组件
@@ -52,7 +30,13 @@ func main() {
 		log.Panic(err)
 	}
 	model.Runner() // 异步执行定时任务
-	setNginx()     // 启动nginx
+
+	//
+	lib.SetNginx(
+		util.GetEnv("NGINX_BINARY", "openresty"),
+		util.GetEnv("NGINX_PREFIX", "./"),
+		util.GetEnv("NGINX_OUTPUT", ""),
+	)
 
 	// 启动Http服务器 高性能版
 	route := internal.InitRoute()                    // 挂载默认接口路由
@@ -63,7 +47,7 @@ func main() {
 		Handler:        route,
 		ReadTimeout:    30 * time.Second,
 		WriteTimeout:   30 * time.Second,
-		MaxHeaderBytes: 1 << 20,
+		MaxHeaderBytes: 1 << 15,
 	}
 	log.Printf("[HTTP] Listening on (%s): http://%s\n", time.Since(config.StartTime), config.Listen())
 	log.Panic(httpServe.ListenAndServe())

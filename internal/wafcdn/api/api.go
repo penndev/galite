@@ -16,7 +16,7 @@ func HandlePutLog(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"message": "参数错误" + err.Error()})
 		return
 	}
-	param.Gorm().Create(param)
+	param.DB().Create(param)
 	c.JSON(http.StatusOK, gin.H{"Message": "完成"})
 }
 

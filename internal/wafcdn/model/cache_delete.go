@@ -12,7 +12,7 @@ import (
 )
 
 type CacheDelete struct {
-	orm.Model
+	orm.ModelBase
 	SiteID uint   `json:"site_id" form:"site_id"`
 	Uri    string `json:"uri" form:"uri" binding:"required"`
 	Log    string `json:"log" form:"log"`
@@ -40,7 +40,7 @@ func CacheDeleteRunner() {
 		action := cache.Bind(cache, func(db *gorm.DB) *gorm.DB {
 			db.Where("site_id = ? and uri like ?", cacheDelete.SiteID, cacheDelete.Uri+"%")
 			return db
-		})
+		}).BindGorm()
 		// 查询总数
 		var total int64
 		action.Count(&total)

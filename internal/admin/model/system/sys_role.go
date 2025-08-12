@@ -10,7 +10,7 @@ type RouteItem struct {
 }
 
 type SysRole struct {
-	orm.Model
+	orm.ModelBase
 	Name   string      `json:"name"`
 	Status uint8       `json:"status"`
 	Menu   []string    `gorm:"serializer:json" json:"menu"`

@@ -63,7 +63,7 @@ func Role() gin.HandlerFunc {
 			// 	access.Payload = string(httpRequest)
 			// }
 			access.Status = c.Writer.Status()
-			if err := access.Bind(access).Create(access).Error; err != nil {
+			if err := access.DB().Create(access).Error; err != nil {
 				c.JSON(http.StatusBadRequest, bind.Message{Message: "日志记录失败:" + err.Error()})
 				c.Abort()
 				return

@@ -3,7 +3,7 @@ package model
 import "github.com/penndev/galite/pkg/orm"
 
 type Log struct {
-	orm.Model
+	orm.ModelBase
 	SiteID        uint   `json:"site_id" form:"site_id" binding:"required"`
 	Host          string `json:"host"`
 	RemoteAddr    string `json:"remote_addr"`

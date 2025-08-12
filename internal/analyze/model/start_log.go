@@ -4,7 +4,7 @@ import "github.com/penndev/galite/pkg/orm"
 
 // StartLog 表示启动记录表
 type AnalyzeStartLog struct {
-	orm.Model
+	orm.ModelBase
 	App                 string            `json:"app"`                    // 应用名
 	Channel             string            `json:"channel"`                // 渠道码
 	DeviceID            string            `json:"device_id"`              // 设备ID

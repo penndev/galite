@@ -3,7 +3,7 @@ package system
 import "github.com/penndev/galite/pkg/orm"
 
 type SysAccessLog struct {
-	orm.Model
+	orm.ModelBase
 	SysAdminID uint     `json:"SysAdminId"`
 	SysAdmin   SysAdmin `json:"SysAdmin"`
 	Method     string   `json:"method"`

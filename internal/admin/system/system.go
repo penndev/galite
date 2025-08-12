@@ -111,7 +111,7 @@ func Login(c *gin.Context) {
 				res.Passwd = string(bcryptPasswd)
 				res.Status = 1
 				res.Nickname = "超级管理员"
-				if err = res.Bind(res).Create(res).Error; err != nil {
+				if err = res.DB().Create(res).Error; err != nil {
 					msg = "初始化管理员失败，请查看错误日志(1)"
 				}
 			}
@@ -223,7 +223,7 @@ func ChangePasswd(c *gin.Context) {
 		return
 	}
 	res.Passwd = string(pwd)
-	res.Bind(res).Updates(res)
+	res.DB().Updates(res)
 	c.JSON(http.StatusOK, bind.Message{Message: "修改完成"})
 }
 

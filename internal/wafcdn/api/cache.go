@@ -24,7 +24,7 @@ func HandleGetCache(c *gin.Context) {
 		return
 	}
 
-	err := param.Bind(param).Where("site_id = ? and method = ? and uri = ?", param.SiteID, param.Method, param.Uri).First(param).Error
+	err := param.DB().Where("site_id = ? and method = ? and uri = ?", param.SiteID, param.Method, param.Uri).First(param).Error
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"Message": "查询失败(" + err.Error() + ")"})
 		return
@@ -43,7 +43,7 @@ func HandlePutCache(c *gin.Context) {
 		c.JSON(400, gin.H{"message": "参数错误" + err.Error()})
 		return
 	}
-	err := param.Gorm().Transaction(func(tx *gorm.DB) error {
+	err := param.DB().Transaction(func(tx *gorm.DB) error {
 		if err := tx.Where(
 			"site_id = ? and method = ? and uri = ?",
 			param.SiteID, param.Method, param.Uri,

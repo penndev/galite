@@ -1,6 +1,7 @@
 package system
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -20,7 +21,7 @@ func AdminList(c *gin.Context) {
 	}
 	var total int64
 	var list []system.SysAdmin
-
+	log.Println("i am  here")
 	m := param.Param() //处理筛选
 	m.List(&total, &list)
 	c.JSON(http.StatusOK, bind.DataList{Total: total, Data: list})
@@ -41,7 +42,7 @@ func AdminAdd(c *gin.Context) {
 		}
 		param.Passwd = string(str)
 	}
-	if err := param.Bind(param).Create(param).Error; err != nil {
+	if err := param.DB().Create(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "创建失败(" + err.Error() + ")"})
 	} else {
 		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
@@ -63,7 +64,7 @@ func AdminUpdate(c *gin.Context) {
 		}
 		param.Passwd = string(str)
 	}
-	if err := param.Bind(param).Updates(param).Error; err != nil {
+	if err := param.DB().Updates(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "更新失败(" + err.Error() + ")"})
 	} else {
 		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
@@ -78,7 +79,7 @@ func AdminDelete(c *gin.Context) {
 	}
 	param := &system.SysAdmin{}
 	param.ID = uint(id)
-	if err := param.Bind(param).Delete(param).Error; err != nil {
+	if err := param.DB().Delete(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "删除失败(" + err.Error() + ")"})
 	} else {
 		c.JSON(http.StatusOK, bind.Message{Message: "完成"})

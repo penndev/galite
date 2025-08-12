@@ -1,5 +1,6 @@
 {
     "cSpell.words": [
+        "conds",
         "dbname",
         "Dialector",
         "galite",
@@ -10,6 +11,7 @@
         "gorm",
         "natefinch",
         "penndev",
+        "ttlmap",
         "wafcdn"
     ]
 }

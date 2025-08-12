@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 )
 
@@ -42,7 +43,7 @@ func StrConv[R Number](str string) (R, error) {
 }
 
 // 字符串切片批量转换为 []R
-func StrsConv[R Number](strs []string) ([]R, error) {
+func StrArrConv[R Number](strs []string) ([]R, error) {
 	out := make([]R, 0, len(strs))
 	for _, s := range strs {
 		v, err := StrConv[R](s)
@@ -52,4 +53,12 @@ func StrsConv[R Number](strs []string) ([]R, error) {
 		out = append(out, v)
 	}
 	return out, nil
+}
+
+func GetEnv(key string, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }

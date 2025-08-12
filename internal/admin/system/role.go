@@ -29,7 +29,7 @@ func RoleAdd(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
-	if err := param.Bind(param).Create(param).Error; err != nil {
+	if err := param.DB().Create(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "创建失败(" + err.Error() + ")"})
 	} else {
 		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
@@ -42,7 +42,7 @@ func RoleUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
-	if err := param.Bind(param).Updates(param).Error; err != nil {
+	if err := param.DB().Updates(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "更新失败(" + err.Error() + ")"})
 	} else {
 		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
@@ -57,7 +57,7 @@ func RoleDelete(c *gin.Context) {
 	}
 	param := &system.SysRole{}
 	param.ID = uint(id)
-	if err := param.Bind(param).Delete(param).Error; err != nil {
+	if err := param.DB().Delete(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "删除失败(" + err.Error() + ")"})
 	} else {
 		c.JSON(http.StatusOK, bind.Message{Message: "完成"})

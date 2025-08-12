@@ -63,7 +63,7 @@ type SiteProxy struct {
 }
 
 type Site struct {
-	orm.Model
+	orm.ModelBase
 	Type     string       `json:"type"`
 	Remark   string       `json:"remark"`
 	Security SiteSecurity `gorm:"serializer:json" json:"security"`
@@ -82,7 +82,7 @@ func GetSiteByID(id uint) (*Site, error) {
 	if err := lib.Cache.GetAny(cacheKey, site); err == nil {
 		return site, err
 	}
-	err := site.Gorm().First(site).Error
+	err := site.DB().First(site, id).Error
 	if err != nil {
 		return nil, err
 	}

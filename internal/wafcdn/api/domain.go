@@ -17,7 +17,7 @@ func HandleSSL(c *gin.Context) {
 		return
 	}
 	domain := model.Domain{}
-	result := domain.Bind(&domain).Where("name = ?", host).Last(&domain)
+	result := domain.DB().Where("name = ?", host).Last(&domain)
 	if !domain.SSL || result.Error != nil {
 		c.JSON(400, gin.H{
 			"error": result.Error.Error(),
@@ -41,7 +41,7 @@ func HandleDomain(c *gin.Context) {
 		return
 	}
 	domain := model.Domain{}
-	result := domain.Bind(&domain).Where("name = ?", c.Query("host")).Preload("Site").Last(&domain)
+	result := domain.DB().Where("name = ?", c.Query("host")).Preload("Site").Last(&domain)
 	if result.Error != nil {
 		c.JSON(400, gin.H{
 			"error": result.Error.Error(),

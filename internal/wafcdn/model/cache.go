@@ -54,7 +54,7 @@ func (h *Header) UnmarshalJSON(data []byte) error {
 }
 
 type Cache struct {
-	orm.Model
+	orm.ModelBase
 	SiteID uint   `json:"site_id" form:"site_id" binding:"required"`
 	Uri    string `json:"uri" form:"uri" binding:"required"`
 	Method string `json:"method" form:"method" binding:"required"`
@@ -82,8 +82,8 @@ func (cache *Cache) SetCache() error {
 }
 
 func GetCacheByIds(ids []uint) []Cache {
-	m := &Cache{}
 	var caches []Cache
+	m := &Cache{}
 	m.Bind(m, func(db *gorm.DB) *gorm.DB {
 		db.Where("id IN ?", ids)
 		return db
@@ -96,8 +96,7 @@ func GetCacheByIds(ids []uint) []Cache {
 // 然后在数据库插入成功后再修改完整的文件名
 // 不然文件名称修改后但是最新的文件再次被删除了。
 func CacheDeleteByData(caches []Cache) error {
-	m := &Cache{}
-	m.Gorm().Transaction(func(tx *gorm.DB) error {
+	err := (&Cache{}).DB().Transaction(func(tx *gorm.DB) error {
 		for _, cache := range caches {
 			tx.Delete(&cache)
 			lib.Cache.Delete(cache.CacheKey())
@@ -107,5 +106,5 @@ func CacheDeleteByData(caches []Cache) error {
 		}
 		return nil
 	})
-	return nil
+	return err
 }

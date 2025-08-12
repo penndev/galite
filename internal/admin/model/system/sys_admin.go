@@ -5,7 +5,7 @@ import (
 )
 
 type SysAdmin struct {
-	orm.Model
+	orm.ModelBase
 	Email     string  `gorm:"uniqueIndex,size=256" json:"email"`
 	Passwd    string  `json:"-"`
 	SysRoleID *uint   `json:"SysRoleId"` // 必须用指针因为外键关联问题 foreign key constraint
@@ -20,12 +20,12 @@ type SysAdmin struct {
 
 func SysAdminGetByEmail(email string) (*SysAdmin, error) {
 	var sysAdmin SysAdmin
-	result := orm.DB.Where(&SysAdmin{Email: email}).Preload("SysRole").First(&sysAdmin)
+	result := sysAdmin.Bind(&SysAdmin{Email: email}).BindGorm().Preload("SysRole").First(&sysAdmin)
 	return &sysAdmin, result.Error
 }
 
 func SysAdminGetByID(id int) (*SysAdmin, error) {
 	var sysAdmin SysAdmin
-	result := orm.DB.Preload("SysRole").Where("id = ?", id).First(&sysAdmin)
+	result := sysAdmin.DB().Preload("SysRole").First(&sysAdmin, id)
 	return &sysAdmin, result.Error
 }
