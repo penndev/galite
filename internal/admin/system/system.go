@@ -1,7 +1,6 @@
 package system
 
 import (
-	"bytes"
 	"encoding/base64"
 	"errors"
 	"image/color"
@@ -18,7 +17,6 @@ import (
 	"github.com/penndev/galite/internal/config"
 	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/internal/logger"
-	"github.com/penndev/galite/pkg/util"
 	"github.com/penndev/gopkg/captcha"
 	"github.com/penndev/gopkg/otp"
 	"go.uber.org/zap"
@@ -119,6 +117,12 @@ func Login(c *gin.Context) {
 		c.JSON(http.StatusForbidden, bind.Message{Message: msg})
 		return
 	}
+
+	if res.Status != 1 {
+		c.JSON(http.StatusForbidden, bind.Message{Message: "用户已被禁用"})
+		return
+	}
+
 	if bcrypt.CompareHashAndPassword([]byte(res.Passwd), []byte(request.Password)) != nil {
 		c.JSON(http.StatusForbidden, bind.Message{Message: "用户密码错误"})
 		return
@@ -127,13 +131,7 @@ func Login(c *gin.Context) {
 	// 登录需要二次验证时，先将用户信息存入 Redis，等待 OTP 验证
 	if res.OtpStatus == 1 {
 		key := "otp:login:" + strconv.Itoa(int(res.ID))
-		data, err := util.Encode(res)
-		if err != nil {
-			logger.L.Error("lib.Encode", zap.Error(err))
-			c.JSON(http.StatusInternalServerError, bind.Message{Message: "编码失败"})
-			return
-		}
-		if err := lib.Cache.SetAny(key, data, 5*time.Minute); err != nil {
+		if err := lib.Cache.SetAny(key, res, 5*time.Minute); err != nil {
 			logger.L.Error("Redis错误", zap.Error(err))
 			c.JSON(http.StatusInternalServerError, bind.Message{Message: "Redis错误"})
 			return
@@ -167,16 +165,10 @@ func LoginOTP(c *gin.Context) {
 		return
 	}
 	key := "otp:login:" + strconv.Itoa(request.ID)
-	var data []byte
-	if err := lib.Cache.GetAny(key, &data); err != nil {
-		logger.L.Warn("Redis错误", zap.Error(err))
-		c.JSON(http.StatusForbidden, bind.Message{Message: "登录信息已过期，请重新登录"})
-		return
-	}
 	var res system.SysAdmin
-	if err := util.Decode(bytes.NewBuffer(data), &res); err != nil {
-		logger.L.Error("lib.Decode", zap.Error(err))
-		c.JSON(http.StatusInternalServerError, bind.Message{Message: "解码失败"})
+	if err := lib.Cache.GetAny(key, &res); err != nil {
+		logger.L.Warn("Cache错误", zap.Error(err))
+		c.JSON(http.StatusForbidden, bind.Message{Message: "登录信息已过期，请重新登录"})
 		return
 	}
 	// 校验 OTP
@@ -246,6 +238,7 @@ func ChangeOTP(c *gin.Context) {
 	res.OtpStatus = 1
 	res.OtpTitle = request.OtpTitle
 	res.OtpSecret = request.OtpSecret
+	res.DB().Updates(res)
 	c.JSON(http.StatusOK, bind.Message{Message: "修改完成"})
 }
 

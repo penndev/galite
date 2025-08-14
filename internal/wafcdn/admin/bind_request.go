@@ -58,7 +58,10 @@ type bindCacheParam struct {
 func (b *bindCacheParam) Param() *model.Cache {
 	m := &model.Cache{}
 	w := func(orm *gorm.DB) *gorm.DB {
-		return orm.Where("uri like ?", b.Uri+"%")
+		if b.Uri != "" {
+			orm = orm.Where("uri like ?", b.Uri+"%")
+		}
+		return orm
 	}
 	m.Bind(m, w, b)
 	return m

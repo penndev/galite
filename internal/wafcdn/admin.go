@@ -7,12 +7,12 @@ import (
 
 // 注册admin接口
 // wafcdn.InitAdminRoute(engine.Group("/wafcdn"))
-func InitAdminRoute(route *ginhelper.RouterGroup) {
+func InitAdminRoute(route *ginhelper.RoleRoute) {
 	route.GET("/site", admin.SiteList)
 	route.POST("/site", admin.SiteAdd)
 	route.PUT("/site", admin.SiteUpdate)
 	route.DELETE("/site", admin.SiteDelete)
-	route.GET("/ipregion", admin.IPRegion)
+	route.GET("/ip-region", admin.IPRegion)
 
 	// 管理域名
 	route.GET("/domain", admin.DomainList)
@@ -28,9 +28,8 @@ func InitAdminRoute(route *ginhelper.RouterGroup) {
 
 	// 查看访问日志列表
 	route.GET("/log", admin.LogList)
-
-	route.GET("/openrsty/status", admin.OpenrestyStatus)
-	route.PUT("/openrsty/start", admin.OpenrestyStart)
-	route.PUT("/openrsty/stop", admin.OpenrestyStop)
-	route.PUT("/openrsty/reload", admin.OpenrestyReload)
+	route.GET("/openresty/status", admin.OpenrestyStatus)
+	route.PUT("/openresty/start", admin.OpenrestyStart)
+	route.PUT("/openresty/stop", admin.OpenrestyStop)
+	route.PUT("/openresty/reload", admin.OpenrestyReload)
 }

@@ -1,11 +1,11 @@
 package system
 
 import (
-	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"github.com/penndev/galite/internal/admin/bind"
 	"github.com/penndev/galite/internal/admin/model/system"
 	"github.com/penndev/galite/internal/logger"
@@ -21,7 +21,6 @@ func AdminList(c *gin.Context) {
 	}
 	var total int64
 	var list []system.SysAdmin
-	log.Println("i am  here")
 	m := param.Param() //处理筛选
 	m.List(&total, &list)
 	c.JSON(http.StatusOK, bind.DataList{Total: total, Data: list})
@@ -51,20 +50,27 @@ func AdminAdd(c *gin.Context) {
 
 func AdminUpdate(c *gin.Context) {
 	param := &system.SysAdmin{}
-	if err := c.BindJSON(&param); err != nil {
+	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
 		return
 	}
-	if param.Passwd == "" {
-		str, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.MinCost)
+	var extra struct {
+		Passwd string `json:"passwd"`
+	}
+	_ = c.ShouldBindBodyWith(&extra, binding.JSON)
+	query := param.DB()
+	if extra.Passwd != "" {
+		str, err := bcrypt.GenerateFromPassword([]byte(extra.Passwd), bcrypt.MinCost)
 		if err != nil {
 			logger.L.Error("创建管理员密码失败", zap.Error(err))
 			c.JSON(http.StatusBadRequest, bind.Message{Message: "初始化管理员失败，请查看错误日志"})
 			return
 		}
 		param.Passwd = string(str)
+	} else {
+		query = query.Omit("passwd")
 	}
-	if err := param.DB().Updates(param).Error; err != nil {
+	if err := query.Save(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "更新失败(" + err.Error() + ")"})
 	} else {
 		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
