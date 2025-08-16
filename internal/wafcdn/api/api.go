@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -38,7 +37,7 @@ func flushBuffer() {
 		logger.L.Error("批量写入日志失败", zap.Error(err))
 		return
 	}
-	log.Printf("成功批量写入 %d 条日志", len(logsToInsert))
+	// log.Printf("成功批量写入 %d 条日志", len(logsToInsert))
 }
 
 // 启动定期刷新协程
