@@ -10,21 +10,21 @@ import (
 
 func InitCache() error {
 	var err error
-	var cache cache.Interface
+	var cacheClient cache.Interface
 	dsn := cfg.Cache.Dsn
 	switch {
 	case strings.HasPrefix(dsn, "redis://"):
-		if cache, err = lib.InitRedis(dsn); err != nil {
+		if cacheClient, err = cache.InitRedis(dsn); err != nil {
 			return err
 		}
-		closeList = append(closeList, cache.(closeInterface))
+		closeList = append(closeList, cacheClient.(closeInterface))
 	case strings.HasPrefix(dsn, "ttlmap://"):
-		if cache, err = lib.InitTTLMap(dsn); err != nil {
+		if cacheClient, err = cache.InitTTLMap(dsn); err != nil {
 			return err
 		}
 	default:
 		return errors.New("not set cache env")
 	}
-	lib.SetCache(cache)
+	lib.SetCache(cacheClient)
 	return nil
 }

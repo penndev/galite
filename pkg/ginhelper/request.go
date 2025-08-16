@@ -4,6 +4,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// RequestHost 获取请求的Host信息包含协议域名端口
 // @return Context.[Keys].RequestHost 请求Host
 // example:
 //

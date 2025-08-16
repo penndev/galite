@@ -1,22 +1,21 @@
-package lib
+package cache
 
 import (
 	"errors"
 	"reflect"
 	"time"
 
-	"github.com/penndev/galite/pkg/cache"
 	"github.com/penndev/gopkg/ttlmap"
 )
 
 // TTLMap实例
-type ttlmapClient struct {
-	*ttlmap.TTLMap
+type TTLMap struct {
+	*ttlmap.Map
 }
 
 // var TTLMap *ttlmapClient
 
-func (t *ttlmapClient) GetAny(k string, s any) error {
+func (t *TTLMap) GetAny(k string, s any) error {
 	result, ok := t.Get(k)
 	if !ok {
 		return errors.New(k + " not found")
@@ -32,7 +31,7 @@ func (t *ttlmapClient) GetAny(k string, s any) error {
 	return nil
 }
 
-func (t *ttlmapClient) SetAny(k string, s any, exp time.Duration) error {
+func (t *TTLMap) SetAny(k string, s any, exp time.Duration) error {
 	if exp < 1 {
 		exp := 24 * time.Hour
 		t.Set(k, s, exp)
@@ -42,14 +41,14 @@ func (t *ttlmapClient) SetAny(k string, s any, exp time.Duration) error {
 	return nil
 }
 
-func (r *ttlmapClient) Delete(k string) error {
-	r.TTLMap.Delete(k)
+func (r *TTLMap) Delete(k string) error {
+	r.Map.Delete(k)
 	return nil
 }
 
-func InitTTLMap(dsn string) (cache.Interface, error) {
-	TTLMap := &ttlmapClient{
-		TTLMap: ttlmap.New(),
+func InitTTLMap(dsn string) (Interface, error) {
+	TTLMap := &TTLMap{
+		Map: ttlmap.New(),
 	}
 	return TTLMap, nil
 }

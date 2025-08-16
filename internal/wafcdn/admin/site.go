@@ -76,18 +76,18 @@ func IPRegion(c *gin.Context) {
 	c.BindQuery(&region)
 
 	// 筛选数据列表
-	var current *ip2region.Region
-	var data []string // 返回数据内容
+	current := &ip2region.Region[0] // 默认选择第一个国家
+	var data []string               // 返回数据内容
 
 	// 如果未选择国家，返回所有国家名称
 	if region.Country == "" {
-		for _, item := range ip2region.RegionList {
+		for _, item := range ip2region.Region {
 			data = append(data, item.Name)
 		}
 		c.JSON(http.StatusOK, bind.DataList{Data: data})
 		return
 	} else {
-		for _, item := range ip2region.RegionList {
+		for _, item := range ip2region.Region {
 			if region.Country == item.Name {
 				current = &item
 				break
