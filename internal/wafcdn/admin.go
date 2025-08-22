@@ -19,6 +19,7 @@ func InitAdminRoute(route *ginhelper.RoleRoute) {
 	route.POST("/domain", admin.DomainAdd)
 	route.PUT("/domain", admin.DomainUpdate)
 	route.DELETE("/domain", admin.DomainDelete)
+	route.POST("/domain/acme", admin.DomainAcme) // ACME证书申请
 	// 查看缓存列表
 	route.GET("/cache", admin.CacheList)
 	route.DELETE("/cache", admin.CacheDelete)
