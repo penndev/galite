@@ -33,7 +33,7 @@ func DomainAdd(c *gin.Context) {
 func DomainList(c *gin.Context) {
 	param := &bindDomainParam{}
 	if err := c.BindQuery(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	var total int64
@@ -41,6 +41,12 @@ func DomainList(c *gin.Context) {
 
 	m := param.Param() //处理筛选
 	m.List(&total, &list)
+	// 解析证书
+	for i := range list {
+		if list[i].PublicKey != "" && list[i].PrivateKey != "" {
+			list[i].ParseCertInfo()
+		}
+	}
 	c.JSON(http.StatusOK, bind.DataList{Total: total, Data: list})
 }
 
@@ -48,7 +54,7 @@ func DomainList(c *gin.Context) {
 func DomainUpdate(c *gin.Context) {
 	param := &model.Domain{}
 	if err := c.BindJSON(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	if err := param.DB().Updates(param).Error; err != nil {
@@ -62,7 +68,7 @@ func DomainUpdate(c *gin.Context) {
 func DomainDelete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Query("id"))
 	if id < 1 || err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	param := &model.Domain{}
@@ -77,14 +83,19 @@ func DomainDelete(c *gin.Context) {
 func DomainAcme(c *gin.Context) {
 	param := &model.Domain{}
 	if err := c.BindJSON(param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
+		return
+	}
+
+	if param.Domain == "" || param.SSLEmail == "" {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "必须设置域名与邮箱"})
 		return
 	}
 
 	// 本地验证域名所有权
-	preToken := "pre_" + base64.RawURLEncoding.EncodeToString([]byte(param.Name))
-	lib.Cache.SetAny("acme:"+preToken, param.Name, 5*time.Minute) // 缓存5分钟
-	resp, err := http.Get("http://" + param.Name + "/.well-known/acme-challenge/" + preToken)
+	preToken := "pre_" + base64.RawURLEncoding.EncodeToString([]byte(param.Domain))
+	lib.Cache.SetAny("acme:"+preToken, param.Domain, 5*time.Minute) // 缓存5分钟
+	resp, err := http.Get("http://" + param.Domain + "/.well-known/acme-challenge/" + preToken)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "无法访问验证URL: " + err.Error()})
 		return
@@ -95,13 +106,13 @@ func DomainAcme(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "读取内容失败: " + err.Error()})
 		return
 	}
-	if resp.StatusCode != http.StatusOK || strings.TrimSpace(string(body)) != param.Name {
+	if resp.StatusCode != http.StatusOK || strings.TrimSpace(string(body)) != param.Domain {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "本地验证域名所有权失败"})
 		return
 	}
 
 	auth := &acme.Auth{
-		Domain: []string{param.Name},
+		Domain: []string{param.Domain},
 		Email:  "your@email.com",
 	}
 	tasks, err := auth.AuthorizeOrder()

@@ -161,7 +161,7 @@ func LoginOTP(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		logger.L.Warn("二步验证登录失败", zap.Error(err))
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	key := "otp:login:" + strconv.Itoa(request.ID)
@@ -196,7 +196,7 @@ func ChangePasswd(c *gin.Context) {
 	var request bindChangePasswdInput
 	if err := c.ShouldBindJSON(&request); err != nil {
 		logger.L.Warn("修改失败", zap.Error(err))
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	res, err := system.SysAdminGetByID(c.GetInt("adminID"))
@@ -227,7 +227,7 @@ func ChangeOTP(c *gin.Context) {
 	}
 	if err := c.ShouldBindJSON(&request); err != nil {
 		logger.L.Warn("修改失败", zap.Error(err))
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	res, err := system.SysAdminGetByID(c.GetInt("adminID"))

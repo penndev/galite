@@ -13,7 +13,7 @@ import (
 func CacheList(c *gin.Context) {
 	param := &bindCacheParam{}
 	if err := c.BindQuery(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	var total int64
@@ -40,7 +40,7 @@ func CacheDelete(c *gin.Context) {
 func CacheDeleteList(c *gin.Context) {
 	param := &bindCacheDeleteParam{}
 	if err := c.BindQuery(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	var total int64

@@ -16,7 +16,7 @@ import (
 func AdminList(c *gin.Context) {
 	param := &bindSystemAdminParam{}
 	if err := c.BindQuery(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	var total int64
@@ -51,7 +51,7 @@ func AdminAdd(c *gin.Context) {
 func AdminUpdate(c *gin.Context) {
 	param := &system.SysAdmin{}
 	if err := c.ShouldBindBodyWith(&param, binding.JSON); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	var extra struct {
@@ -80,7 +80,7 @@ func AdminUpdate(c *gin.Context) {
 func AdminDelete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Query("id"))
 	if id < 1 || err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	param := &system.SysAdmin{}
@@ -96,7 +96,7 @@ func AdminAccessLog(c *gin.Context) {
 	c.Set("accessLog", false) // 设置访问日志标志
 	param := &bindSysAccessParam{}
 	if err := c.BindQuery(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	var total int64

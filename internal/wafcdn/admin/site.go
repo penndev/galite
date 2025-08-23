@@ -29,7 +29,7 @@ func SiteAdd(c *gin.Context) {
 func SiteList(c *gin.Context) {
 	param := &bindSiteParam{}
 	if err := c.BindQuery(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	var total int64
@@ -44,7 +44,7 @@ func SiteList(c *gin.Context) {
 func SiteUpdate(c *gin.Context) {
 	param := &model.Site{}
 	if err := c.BindJSON(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	if err := param.DB().Updates(param).Error; err != nil {
@@ -58,7 +58,7 @@ func SiteUpdate(c *gin.Context) {
 func SiteDelete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Query("id"))
 	if id < 1 || err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	param := &model.Site{}

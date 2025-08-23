@@ -12,7 +12,7 @@ import (
 func RoleList(c *gin.Context) {
 	param := &bindSystemRoleParam{}
 	if err := c.BindQuery(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	var total int64
@@ -26,7 +26,7 @@ func RoleList(c *gin.Context) {
 func RoleAdd(c *gin.Context) {
 	param := &system.SysRole{}
 	if err := c.BindJSON(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	if err := param.DB().Create(param).Error; err != nil {
@@ -39,7 +39,7 @@ func RoleAdd(c *gin.Context) {
 func RoleUpdate(c *gin.Context) {
 	param := &system.SysRole{}
 	if err := c.BindJSON(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	if err := param.DB().Updates(param).Error; err != nil {
@@ -52,7 +52,7 @@ func RoleUpdate(c *gin.Context) {
 func RoleDelete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Query("id"))
 	if id < 1 || err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
 	param := &system.SysRole{}

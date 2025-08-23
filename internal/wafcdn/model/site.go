@@ -53,6 +53,7 @@ type SiteProxy struct {
 	KeepaliveTimeout  int          `json:"keepalive_timeout"`
 	KeepaliveRequests int          `json:"keepalive_requests"`
 	Header            []SiteHeader `json:"header"`
+	CachePurge        bool         `json:"cache_purge"` // 允许快速清理缓存
 	Cache             []struct {
 		Ruth   string   `json:"ruth"`   // 缓存路径 正则表达式
 		Time   int      `json:"time"`   // 缓存时间/秒

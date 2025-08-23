@@ -37,7 +37,7 @@ type bindDomainParam struct {
 func (b *bindDomainParam) Param() *model.Domain {
 	m := &model.Domain{}
 	if b.Name != "" {
-		m.Name = "%" + b.Name + "%"
+		m.Domain = "%" + b.Name + "%"
 	}
 	w := func(orm *gorm.DB) *gorm.DB {
 		return orm.Where(m)
