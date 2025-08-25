@@ -3,6 +3,7 @@ package admin
 import (
 	"encoding/base64"
 	"io"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/internal/wafcdn/model"
 	"github.com/penndev/gopkg/acme"
+	"golang.org/x/net/publicsuffix"
 )
 
 // 添加新的站点
@@ -22,8 +24,15 @@ func DomainAdd(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
-	if err := param.DB().Create(param).Error; err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "创建失败(" + err.Error() + ")"})
+	if param.Wildcard {
+		var err error
+		if param.Domain, err = publicsuffix.EffectiveTLDPlusOne(param.Domain); err != nil {
+			c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
+			return
+		}
+	}
+	if err := param.DB().Save(param).Error; err != nil {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "存储失败(" + err.Error() + ")"})
 	} else {
 		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
 	}
@@ -36,6 +45,7 @@ func DomainList(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
+	log.Println(param)
 	var total int64
 	var list []model.Domain
 
@@ -44,24 +54,10 @@ func DomainList(c *gin.Context) {
 	// 解析证书
 	for i := range list {
 		if list[i].PublicKey != "" && list[i].PrivateKey != "" {
-			list[i].ParseCertInfo()
+			list[i].ParseCertInfo() // 解析证书信息
 		}
 	}
 	c.JSON(http.StatusOK, bind.DataList{Total: total, Data: list})
-}
-
-// 更新资料
-func DomainUpdate(c *gin.Context) {
-	param := &model.Domain{}
-	if err := c.BindJSON(&param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
-		return
-	}
-	if err := param.DB().Updates(param).Error; err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "更新失败(" + err.Error() + ")"})
-	} else {
-		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
-	}
 }
 
 // 删除资料

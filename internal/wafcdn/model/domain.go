@@ -3,6 +3,7 @@ package model
 import (
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
 
 	"github.com/penndev/galite/pkg/orm"
 )
@@ -17,15 +18,17 @@ type CertInfo struct {
 
 type Domain struct {
 	orm.ModelBase
-	Domain string `json:"domain" binding:"hostname_rfc1123"` // 站点域名
-	Remark string `json:"remark"`                            // 备注
+	Remark string `json:"remark"` // 备注
+
+	Domain   string `json:"domain"`   // 站点域名
+	Wildcard bool   `json:"wildcard"` // 通配符域名
 
 	SiteID *uint `json:"SiteId"` // 必须用指针因为外键关联问题 foreign key constraint
 	Site   Site  `json:"Site"`
 
-	SSL        bool     `json:"ssl"`                      // 是否启用ssl
-	SSLEmail   string   `json:"sslEmail" binding:"email"` // 申请证书的邮箱，必须邮箱格式
-	SSLForce   bool     `json:"sslForce"`                 // 强制https
+	SSL        bool     `json:"ssl"`      // 是否启用ssl
+	SSLEmail   string   `json:"sslEmail"` // 申请证书的邮箱
+	SSLForce   bool     `json:"sslForce"` // 强制https
 	PublicKey  string   `json:"publicKey"`
 	PrivateKey string   `json:"privateKey"`
 	CertInfo   CertInfo `json:"certInfo" gorm:"-"` // 证书信息，不存数据库
@@ -33,14 +36,10 @@ type Domain struct {
 
 func (m *Domain) ParseCertInfo() error {
 
-	var block *pem.Block
-	block, _ = pem.Decode([]byte(m.PublicKey))
-	// if block == nil {
-	// 	break
-	// }
-	// if block.Type != "CERTIFICATE" {
-	// 	continue
-	// }
+	block, _ := pem.Decode([]byte(m.PublicKey))
+	if block == nil {
+		return errors.New("error pem byte")
+	}
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
 		return err

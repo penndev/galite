@@ -3,6 +3,7 @@ package api
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/penndev/galite/internal/wafcdn/model"
+	"golang.org/x/net/publicsuffix"
 )
 
 // 对nginx提供接口 获取证书配置
@@ -17,10 +18,11 @@ func HandleSSL(c *gin.Context) {
 		return
 	}
 	domain := model.Domain{}
-	result := domain.DB().Where("name = ?", host).Last(&domain)
+	wildcardHost, _ := publicsuffix.EffectiveTLDPlusOne(host)
+	result := domain.DB().Where("domain = ? or (domain = ? and wildcard = true)", host, wildcardHost).Last(&domain)
 	if !domain.SSL || result.Error != nil {
 		c.JSON(400, gin.H{
-			"error": result.Error.Error(),
+			"error": "ssl not found",
 		})
 		return
 	}
@@ -40,8 +42,11 @@ func HandleDomain(c *gin.Context) {
 		})
 		return
 	}
+
+	host := c.Query("host")
+	wildcardHost, _ := publicsuffix.EffectiveTLDPlusOne(host)
 	domain := model.Domain{}
-	result := domain.DB().Where("name = ?", c.Query("host")).Preload("Site").Last(&domain)
+	result := domain.DB().Where("domain = ? or (domain = ? and wildcard = true)", host, wildcardHost).Preload("Site").Last(&domain)
 	if result.Error != nil {
 		c.JSON(400, gin.H{
 			"error": result.Error.Error(),

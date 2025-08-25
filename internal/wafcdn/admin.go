@@ -17,7 +17,7 @@ func InitAdminRoute(route *ginhelper.RoleRoute) {
 	// 管理域名
 	route.GET("/domain", admin.DomainList)
 	route.POST("/domain", admin.DomainAdd)
-	route.PUT("/domain", admin.DomainUpdate)
+	route.PUT("/domain", admin.DomainAdd)
 	route.DELETE("/domain", admin.DomainDelete)
 	route.POST("/domain/acme", admin.DomainAcme) // ACME证书申请
 	// 查看缓存列表
