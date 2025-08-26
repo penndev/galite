@@ -68,13 +68,17 @@ func HandlePutCache(c *gin.Context) {
 }
 
 func HandlePurgeCache(c *gin.Context) {
-	param := &model.Cache{}
-	if err := c.BindJSON(param); err != nil {
+	param := struct {
+		SiteID uint   `form:"site_id" binding:"required"`
+		Uri    string `form:"uri" binding:"required"`
+	}{}
+	if err := c.BindQuery(&param); err != nil {
 		c.JSON(400, gin.H{"message": "参数错误" + err.Error()})
 		return
 	}
 	var caches []model.Cache
-	param.DB().Where("site_id = ? and uri = ?").Find(&caches)
+	cache := &model.Cache{}
+	cache.DB().Where("site_id = ? and uri = ?", param.SiteID, param.Uri).Find(&caches)
 	if err := model.CacheDeleteByData(caches); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"Message": "删除失败(" + err.Error() + ")"})
 	} else {

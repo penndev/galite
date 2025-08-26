@@ -83,6 +83,7 @@ func HandleDomain(c *gin.Context) {
 			"keepaliveRequests": domain.Site.Proxy.KeepaliveRequests,
 			"header":            proxyHeader,
 			"cache":             domain.Site.Proxy.Cache,
+			"cache_purge":       domain.Site.Proxy.CachePurge,
 		},
 	})
 }
