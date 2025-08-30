@@ -87,6 +87,6 @@ func GetSiteByID(id uint) (*Site, error) {
 	if err != nil {
 		return nil, err
 	}
-	lib.Cache.SetAny(cacheKey, *site, 10*time.Minute)
+	lib.Cache.SetAny(cacheKey, *site, 2*time.Second)
 	return site, err
 }
