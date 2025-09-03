@@ -35,7 +35,10 @@ type Domain struct {
 }
 
 func (m *Domain) ParseCertInfo() error {
-
+	// 不开启证书则不验证
+	if !m.SSL {
+		return nil
+	}
 	block, _ := pem.Decode([]byte(m.PublicKey))
 	if block == nil {
 		return errors.New("error pem byte")
