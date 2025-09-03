@@ -65,15 +65,15 @@ func gormInit(dialector gorm.Dialector, Logger logger.Interface) error {
 
 	// 连接池，程序关闭时回收
 	closeList = append(closeList, sqlDB)
-
-	// 最大空闲数
-	// sqlDB.SetMaxIdleConns(DBMaxIdleConns)
-	// 最大连接数
+	// 配置连接池参数
 	if DBMaxOpenConns > 0 {
+		// 最大空闲数
+		// sqlDB.SetMaxIdleConns(DBMaxIdleConns)
+		// 最大连接数
 		sqlDB.SetMaxOpenConns(DBMaxOpenConns)
+		// 最大存活时间
+		// sqlDB.SetConnMaxLifetime(time.Hour)
 	}
-	// 最大存活时间
-	// sqlDB.SetConnMaxLifetime(time.Hour)
 
 	lib.SetGorm(dataBase)
 	return nil

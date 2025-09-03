@@ -3,7 +3,6 @@ package admin
 import (
 	"encoding/base64"
 	"io"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -49,7 +48,6 @@ func DomainList(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
-	log.Println(param)
 	var total int64
 	var list []model.Domain
 

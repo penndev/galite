@@ -14,7 +14,7 @@ func Logger(logger *zap.Logger) gin.HandlerFunc {
 	}
 	return func(c *gin.Context) {
 		start := time.Now()
-		query := c.Request.URL.RawQuery
+		query := c.Request.URL.Path
 		c.Next()
 		cost := time.Since(start)
 		if loggerLevel == zap.WarnLevel && cost > 2*time.Second {
