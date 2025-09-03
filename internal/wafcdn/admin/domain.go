@@ -31,6 +31,10 @@ func DomainAdd(c *gin.Context) {
 			return
 		}
 	}
+	if err := param.ParseCertInfo(); err != nil {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
+		return
+	}
 	if err := param.DB().Save(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "存储失败(" + err.Error() + ")"})
 	} else {
