@@ -13,8 +13,3 @@ func Migration() {
 	// 注册wafcdn的数据库
 	modelWafCdn.Migration(lib.GormDB)
 }
-
-// 进行后台任务处理
-func Runner() {
-	// go modelWafCdn.CacheDeleteRunner()
-}

@@ -11,6 +11,7 @@
         "gorm",
         "natefinch",
         "penndev",
+        "publicsuffix",
         "ttlmap",
         "wafcdn"
     ]

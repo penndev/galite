@@ -26,12 +26,14 @@ func CacheList(c *gin.Context) {
 // 删除文件如何保持 原子性。
 func CacheDelete(c *gin.Context) {
 	ids := c.QueryArray("ids")
-	uids, err := util.StrArrConv[uint](ids)
+	cIDs, err := util.StrArrConv[uint](ids)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
 		return
 	}
-	model.CacheDeleteByData(model.GetCacheByIds(uids))
+	var caches []model.Cache
+	(&model.Cache{}).DB().Where("id in ?", cIDs).Find(&caches)
+	model.CacheDeleteList(caches)
 	c.JSON(http.StatusOK, bind.Message{
 		Message: "完成",
 	})

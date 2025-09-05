@@ -10,7 +10,6 @@ import (
 	"github.com/glebarez/sqlite"
 	"github.com/penndev/galite/internal/lib"
 	loggerNal "github.com/penndev/galite/internal/logger"
-	"github.com/penndev/galite/internal/model"
 	loggerPkg "github.com/penndev/galite/pkg/logger"
 	"gorm.io/driver/mysql"
 	"gorm.io/driver/postgres"
@@ -95,7 +94,6 @@ func InitGorm() error {
 		if err := gormInit(gormDial, gormLogger); err != nil { // 初始化
 			return err
 		}
-		model.Migration() // 表自动迁移
 	} else {
 		gormLogger := loggerPkg.ZapGormLogger(
 			loggerNal.GormZapLogger,

@@ -7,6 +7,7 @@ import (
 
 	"github.com/penndev/galite/internal"
 	"github.com/penndev/galite/internal/config"
+	"github.com/penndev/galite/internal/model"
 )
 
 func main() {
@@ -20,6 +21,9 @@ func main() {
 	}
 	if err := config.InitGorm(); err != nil {
 		log.Panic(err)
+	}
+	if config.Mode() == config.ModeDev {
+		model.Migration() // 表自动迁移
 	}
 	if err := config.InitCache(); err != nil {
 		log.Panic(err)

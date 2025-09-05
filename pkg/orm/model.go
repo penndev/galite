@@ -40,10 +40,9 @@ type ModelInterface interface {
 }
 
 type ModelBase struct {
-	ID        uint           `gorm:"primaryKey" json:"id"`
-	CreatedAt time.Time      `json:"createdAt"`
-	UpdatedAt time.Time      `json:"updatedAt"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	ID        uint      `gorm:"primaryKey" json:"id"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
 	// gorm.ModelBase
 	bindModel  ModelInterface //查询绑定的表实例
 	bindScopes func(*gorm.DB) *gorm.DB

@@ -29,15 +29,12 @@ func main() {
 	if err := config.InitCache(); err != nil {
 		log.Panic(err)
 	}
-	model.Runner() // 异步执行定时任务
-
-	//
+	// 设置nginx启动
 	lib.SetNginx(
 		util.GetEnv("NGINX_BINARY", "openresty"),
 		util.GetEnv("NGINX_PREFIX", "./"),
 		util.GetEnv("NGINX_OUTPUT", ""),
 	)
-
 	// 启动Http服务器 高性能版
 	route := internal.InitRoute()                    // 挂载默认接口路由
 	route.Static("/-admin", "./dist")                // 挂载后台管理UI

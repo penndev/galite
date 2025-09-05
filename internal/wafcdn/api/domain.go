@@ -1,6 +1,8 @@
 package api
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/penndev/galite/internal/wafcdn/model"
 	"golang.org/x/net/publicsuffix"
@@ -36,21 +38,16 @@ func HandleSSL(c *gin.Context) {
 // @url=/@wafcdn/domain?host=@host
 // @return 配置信息
 func HandleDomain(c *gin.Context) {
-	if c.Query("host") == "" {
-		c.JSON(400, gin.H{
-			"error": "host not found",
-		})
+	host := c.Query("host")
+	if host == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "host not found"})
 		return
 	}
-
-	host := c.Query("host")
 	wildcardHost, _ := publicsuffix.EffectiveTLDPlusOne(host)
 	domain := model.Domain{}
 	result := domain.DB().Where("domain = ? or (domain = ? and wildcard = true)", host, wildcardHost).Preload("Site").Last(&domain)
 	if result.Error != nil {
-		c.JSON(400, gin.H{
-			"error": result.Error.Error(),
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": result.Error.Error()})
 		return
 	}
 
@@ -59,20 +56,14 @@ func HandleDomain(c *gin.Context) {
 	for _, item := range domain.Site.Header {
 		respHeader[item.Name] = item.Value
 	}
-
 	proxyHeader := make(map[string]string)
 	for _, item := range domain.Site.Proxy.Header {
 		proxyHeader[item.Name] = item.Value
 	}
 
-	sslForce := false
-	if domain.SSL {
-		sslForce = domain.SSLForce
-	}
-
 	c.JSON(200, gin.H{
 		"site":     domain.SiteID,
-		"sslForce": sslForce,
+		"sslForce": domain.SSLForce,
 		"type":     domain.Site.Type,
 		"security": domain.Site.Security,
 		"header":   respHeader,
