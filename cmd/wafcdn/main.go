@@ -10,6 +10,7 @@ import (
 	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/internal/model"
 	"github.com/penndev/galite/internal/wafcdn"
+	wafcdnModel "github.com/penndev/galite/internal/wafcdn/model"
 	"github.com/penndev/galite/pkg/util"
 )
 
@@ -29,6 +30,7 @@ func main() {
 	if err := config.InitCache(); err != nil {
 		log.Panic(err)
 	}
+	go wafcdnModel.CacheDeleteAction()
 	// 设置nginx启动
 	lib.SetNginx(
 		util.GetEnv("NGINX_BINARY", "openresty"),

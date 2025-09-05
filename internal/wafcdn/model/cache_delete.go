@@ -19,9 +19,15 @@ type CacheDelete struct {
 }
 
 func CacheDeleteAction() {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Println("CacheDeleteAction panic:", r)
+		}
+	}()
+	time.Sleep(10 * time.Second)
 	for {
 		var cacheDelete CacheDelete
-		cacheDelete.DB().Where("status = false").Order("id ASC").First(&cacheDelete)
+		cacheDelete.DB().Where("status = false").Limit(1).Order("id ASC").Find(&cacheDelete)
 		if cacheDelete.ID < 1 {
 			time.Sleep(10 * time.Second)
 			continue
