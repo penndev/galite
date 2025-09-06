@@ -1,21 +1,45 @@
 package api
 
 import (
+	"log"
 	"net/http"
+	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/penndev/galite/internal/logger"
 	"github.com/penndev/galite/internal/wafcdn/model"
+	"github.com/shirou/gopsutil/v4/disk"
 	"go.uber.org/zap"
 )
 
+var cacheNumber uint64 = 0
+
+// 缓存文件入库，并清盘
 func HandlePutCache(c *gin.Context) {
 	param := &model.Cache{}
 	if err := c.BindJSON(param); err != nil {
 		c.JSON(400, gin.H{"message": "参数错误" + err.Error()})
 		return
 	}
+
+	// 保存文件并清盘
+	if cacheNumber%500 == 0 {
+		dir, maxUsed, n := filepath.Dir(param.Path), 95.00, 1000
+		stat, err := disk.Usage(dir)
+		if err != nil {
+			log.Println("clearCache", zap.Error(err))
+		}
+		if stat.UsedPercent > maxUsed {
+			var caches []model.Cache
+			(&model.Cache{}).DB().Order("id asc").Limit(n).Find(&caches)
+			if err := model.CacheDeleteList(caches); err != nil {
+				log.Println("clearCache", zap.Error(err))
+			}
+		}
+	}
+	cacheNumber++
+
 	err := param.DB().Where(
 		"site_id = ? and method = ? and uri = ?",
 		param.SiteID, param.Method, param.Uri,
