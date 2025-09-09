@@ -1,7 +1,6 @@
 package api
 
 import (
-	"log"
 	"net/http"
 	"path/filepath"
 	"strconv"
@@ -24,21 +23,32 @@ func HandlePutCache(c *gin.Context) {
 	}
 
 	// 保存文件并清盘
-	if cacheNumber%500 == 0 {
-		dir, maxUsed, n := filepath.Dir(param.Path), 95.00, 1000
+	allow := false
+	if cacheNumber%100 == 0 {
+		dir, maxUsed, n := filepath.Dir(param.Path), 95.00, 200
 		stat, err := disk.Usage(dir)
 		if err != nil {
-			log.Println("clearCache", zap.Error(err))
+			logger.L.Error("clearCache", zap.Error(err))
 		}
 		if stat.UsedPercent > maxUsed {
 			var caches []model.Cache
 			(&model.Cache{}).DB().Order("id asc").Limit(n).Find(&caches)
 			if err := model.CacheDeleteList(caches); err != nil {
-				log.Println("clearCache", zap.Error(err))
+				logger.L.Error("clearCache", zap.Error(err))
 			}
 		}
+		if stat.UsedPercent > 97 {
+			allow = true
+		} else {
+			allow = false
+		}
+
 	}
-	cacheNumber++
+	if allow {
+		cacheNumber = 0
+	} else {
+		cacheNumber++
+	}
 
 	err := param.DB().Where(
 		"site_id = ? and method = ? and uri = ?",

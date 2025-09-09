@@ -18,34 +18,50 @@ type CacheDelete struct {
 	Status bool   `json:"status" form:"status"` // 是否完成了任务。
 }
 
+func CacheDeleteTruncate() error {
+	return (&CacheDelete{}).DB().Exec("truncate table cache_deletes").Error
+}
+
+// 运行锁 防止删除并发
+var CacheDeleteActionRuning = false
+
 func CacheDeleteAction() {
+	if CacheDeleteActionRuning {
+		return
+	} else {
+		CacheDeleteActionRuning = true
+	}
+
 	defer func() {
+		CacheDeleteActionRuning = false
 		if r := recover(); r != nil {
 			log.Println("CacheDeleteAction panic:", r)
 		}
 	}()
-	time.Sleep(10 * time.Second)
-	for {
-		var cacheDelete CacheDelete
-		cacheDelete.DB().Where("status = false").Limit(1).Order("id ASC").Find(&cacheDelete)
-		if cacheDelete.ID < 1 {
-			time.Sleep(10 * time.Second)
-			continue
-		}
 
-		cache := &Cache{}
-		cacheWhere := func(db *gorm.DB) *gorm.DB {
-			db.Where("site_id = ? and uri like ?", cacheDelete.SiteID, cacheDelete.Uri+"%")
-			return db
+	for {
+		cacheDelete := &CacheDelete{
+			Status: false,
 		}
+		cacheDelete.Bind(cacheDelete, func(orm *gorm.DB) *gorm.DB {
+			return orm.Where("status = false").Order("id asc").Limit(1)
+		}).Find(cacheDelete)
+		if cacheDelete.ID < 1 {
+			return
+		}
+		cache := &Cache{}
+		query := cache.Bind(cache, func(orm *gorm.DB) *gorm.DB {
+			return orm.Where("site_id = ? and uri like ?", cacheDelete.SiteID, cacheDelete.Uri+"%")
+		}).BindGorm()
+
 		var total int64
-		query := cache.Bind(cache, cacheWhere).BindGorm()
 		query.Count(&total)
+
 		cacheDelete.Log += "匹配缓存数为：" + strconv.FormatInt(total, 10) + "\n"
 
 		deleteCacheTotal := 0
 		for {
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			var caches []Cache
 			if err := query.Limit(1000).Find(&caches).Error; err != nil {
 				log.Println(err)

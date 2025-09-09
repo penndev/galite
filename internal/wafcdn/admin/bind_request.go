@@ -57,7 +57,7 @@ func (b *bindDomainParam) Param() *model.Domain {
 }
 
 // =========================================================== //
-// 获取用户列表
+// 查询缓存列表
 type bindCacheParam struct {
 	orm.BindListParam
 	SiteID uint   `form:"site_id"`
@@ -78,15 +78,34 @@ func (b *bindCacheParam) Param() *model.Cache {
 }
 
 // =========================================================== //
-// 获取用户列表
+// 查询日志列表
 type bindLogParam struct {
 	orm.BindListParam
-	Name string `form:"name" binding:"omitempty,min=2,max=64"`
+	SiteID     uint   `form:"site_id"`
+	Host       string `form:"host"`
+	Request    string `form:"request"`
+	Status     int    `form:"status"`
+	RemoteAddr string `form:"remote_addr"`
 }
 
 // 处理列表请求数据。
 func (b *bindLogParam) Param() *model.Log {
 	m := &model.Log{}
+	if b.SiteID > 0 {
+		m.SiteID = b.SiteID
+	}
+	if b.Host != "" {
+		m.Host = b.Host
+	}
+	if b.Request != "" {
+		m.Request = b.Request
+	}
+	if b.Status > 0 {
+		m.Status = b.Status
+	}
+	if b.RemoteAddr != "" {
+		m.RemoteAddr = b.RemoteAddr
+	}
 	w := func(orm *gorm.DB) *gorm.DB {
 		return orm.Where(m)
 	}
@@ -95,7 +114,7 @@ func (b *bindLogParam) Param() *model.Log {
 }
 
 // =========================================================== //
-// 获取用户列表
+// 获取缓存主动清理列表
 type bindCacheDeleteParam struct {
 	orm.BindListParam
 	SiteID uint   `form:"site_id"`
@@ -106,7 +125,10 @@ type bindCacheDeleteParam struct {
 func (b *bindCacheDeleteParam) Param() *model.CacheDelete {
 	m := &model.CacheDelete{}
 	w := func(orm *gorm.DB) *gorm.DB {
-		return orm.Where("uri like ?", b.Uri+"%")
+		if b.Uri != "" {
+			orm = orm.Where("uri like ?", b.Uri+"%")
+		}
+		return orm
 	}
 	m.Bind(m, w, b)
 	return m
