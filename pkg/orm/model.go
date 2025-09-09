@@ -92,7 +92,7 @@ func (m *ModelBase) Bind(bindModel ModelInterface, param ...any) ModelInterface 
 
 // 返回经过条件绑定处理的原生Gorm
 func (m *ModelBase) BindGorm() *gorm.DB {
-	query := m.DB().Where(m.bindModel)
+	query := m.DB().Model(m.bindModel)
 	if m.bindScopes != nil {
 		query = query.Scopes(m.bindScopes)
 	}
