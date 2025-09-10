@@ -18,8 +18,7 @@ import (
 	"gorm.io/gorm/logger"
 )
 
-// 最大连接数
-var DBMaxOpenConns = 0
+var DBMaxOpenConns = 100
 
 // 数据库连接实例，
 // 将多个数据库连接进行抽象，减少不同数据库配置依赖
@@ -37,7 +36,6 @@ func gormDial(dsn string) (gorm.Dialector, error) {
 		DBMaxOpenConns = 1
 	case strings.HasPrefix(dsn, "postgres://"):
 		GormDial = postgres.Open(dsn)
-		DBMaxOpenConns = 100
 	case strings.HasPrefix(dsn, "sqlserver://"):
 		GormDial = sqlserver.Open(dsn)
 	default:
@@ -67,10 +65,10 @@ func gormInit(dialector gorm.Dialector, Logger logger.Interface) error {
 	closeList = append(closeList, sqlDB)
 	// 配置连接池参数
 	if DBMaxOpenConns > 0 {
-		// 最大空闲数
-		sqlDB.SetMaxIdleConns(DBMaxOpenConns / 10)
 		// 最大连接数
 		sqlDB.SetMaxOpenConns(DBMaxOpenConns)
+		// 最大空闲数
+		sqlDB.SetMaxIdleConns(DBMaxOpenConns / 5)
 		// 最大存活时间
 		sqlDB.SetConnMaxLifetime(time.Hour)
 	}

@@ -3,10 +3,14 @@ package model
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"strconv"
 	"time"
 
+	"github.com/penndev/galite/internal/logger"
 	"github.com/penndev/galite/pkg/orm"
+	"github.com/shirou/gopsutil/v4/disk"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -22,9 +26,10 @@ func CacheDeleteTruncate() error {
 	return (&CacheDelete{}).DB().Exec("truncate table cache_deletes").Error
 }
 
-// 运行锁 防止删除并发
+// 运行锁 防止删除并发 暂时不加锁
 var CacheDeleteActionRuning = false
 
+// 后台运行删除任务
 func CacheDeleteAction() {
 	if CacheDeleteActionRuning {
 		return
@@ -80,5 +85,50 @@ func CacheDeleteAction() {
 				break
 			}
 		}
+	}
+}
+
+var cacheNumber uint64 = 0
+
+// 缓存阈值删除任务
+func CacheDeleteMaxUsed(path string) {
+	if CacheDeleteActionRuning {
+		return
+	} else {
+		CacheDeleteActionRuning = true
+	}
+
+	defer func() {
+		CacheDeleteActionRuning = false
+		if r := recover(); r != nil {
+			log.Println("CacheDeleteAction panic:", r)
+		}
+	}()
+	// 保存文件并清盘
+	allow := false
+	if cacheNumber%100 == 0 {
+		dir, maxUsed, n := filepath.Dir(path), 95.00, 200
+		stat, err := disk.Usage(dir)
+		if err != nil {
+			logger.L.Error("clearCache", zap.Error(err))
+		}
+		if stat.UsedPercent > maxUsed {
+			var caches []Cache
+			(&Cache{}).DB().Order("id asc").Limit(n).Find(&caches)
+			if err := CacheDeleteList(caches); err != nil {
+				logger.L.Error("clearCache", zap.Error(err))
+			}
+		}
+		if stat.UsedPercent > 97 {
+			allow = true
+		} else {
+			allow = false
+		}
+
+	}
+	if allow {
+		cacheNumber = 0
+	} else {
+		cacheNumber++
 	}
 }

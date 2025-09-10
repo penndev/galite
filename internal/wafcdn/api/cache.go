@@ -2,17 +2,13 @@ package api
 
 import (
 	"net/http"
-	"path/filepath"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/penndev/galite/internal/logger"
 	"github.com/penndev/galite/internal/wafcdn/model"
-	"github.com/shirou/gopsutil/v4/disk"
 	"go.uber.org/zap"
 )
-
-var cacheNumber uint64 = 0
 
 // 缓存文件入库，并清盘
 func HandlePutCache(c *gin.Context) {
@@ -22,40 +18,11 @@ func HandlePutCache(c *gin.Context) {
 		return
 	}
 
-	// 保存文件并清盘
-	allow := false
-	if cacheNumber%100 == 0 {
-		dir, maxUsed, n := filepath.Dir(param.Path), 95.00, 200
-		stat, err := disk.Usage(dir)
-		if err != nil {
-			logger.L.Error("clearCache", zap.Error(err))
-		}
-		if stat.UsedPercent > maxUsed {
-			var caches []model.Cache
-			(&model.Cache{}).DB().Order("id asc").Limit(n).Find(&caches)
-			if err := model.CacheDeleteList(caches); err != nil {
-				logger.L.Error("clearCache", zap.Error(err))
-			}
-		}
-		if stat.UsedPercent > 97 {
-			allow = true
-		} else {
-			allow = false
-		}
+	// 处理异步清理文件。
+	go model.CacheDeleteMaxUsed(param.Path)
 
-	}
-	if allow {
-		cacheNumber = 0
-	} else {
-		cacheNumber++
-	}
-
-	err := param.DB().Where(
-		"site_id = ? and method = ? and uri = ?",
-		param.SiteID, param.Method, param.Uri,
-	).Assign(*param).FirstOrCreate(param).Error
-	if err != nil {
-		logger.L.Warn("保存错误", zap.Error(err))
+	if err := param.DB().Create(param).Error; err != nil {
+		logger.L.Error("HandlePutCache", zap.Error(err))
 		c.JSON(http.StatusBadRequest, gin.H{"Message": "创建失败(" + err.Error() + ")"})
 	} else {
 		c.JSON(http.StatusOK, gin.H{"Message": "完成"})
