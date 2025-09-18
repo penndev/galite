@@ -1,10 +1,15 @@
 package api
 
 import (
+	"bytes"
+	"encoding/base64"
+	"image/png"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/penndev/galite/internal/wafcdn/model"
+	"github.com/penndev/gopkg/captcha2"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -77,4 +82,42 @@ func HandleDomain(c *gin.Context) {
 			"cache_purge":       domain.Site.Proxy.CachePurge,
 		},
 	})
+}
+
+// 对nginx提供接口 获取验证码
+// @url=/@wafcdn/captcha?host=@host
+// @return 验证码配置
+func HandleCaptcha(c *gin.Context) {
+
+	img := &captcha2.NewDragImg{
+		ImageWidth:  300,
+		ImageHeight: 150,
+	}
+	img.DragDraw()
+
+	bufImage := new(bytes.Buffer)
+	if err := png.Encode(bufImage, img.Image); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	bufPiece := new(bytes.Buffer)
+	if err := png.Encode(bufPiece, img.Piece); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	id := uuid.New().String()
+	c.JSON(http.StatusOK, gin.H{
+		"id":          id,
+		"imageBase64": "data:image/png;base64," + base64.StdEncoding.EncodeToString(bufImage.Bytes()),
+		"imageWidth":  img.ImageWidth,
+		"imageHeight": img.ImageHeight,
+		"pieceWidth":  img.PieceWidth,
+		"pieceHeight": img.PieceHeight,
+		"pieceBase64": "data:image/png;base64," + base64.StdEncoding.EncodeToString(bufPiece.Bytes()),
+		"verifyX":     img.PieceX,
+		"verifyY":     img.PieceY,
+	})
+
 }

@@ -12,6 +12,7 @@ func InitApiRoute(r *ginhelper.RouterGroup) {
 	r.GET("/purge", api.HandlePurgeCache)   // 用户主动刷新缓存
 	r.GET("/ssl", api.HandleSSL)            // 获取证书配置信息
 	r.GET("/domain", api.HandleDomain)      // 配置域名信息
+	r.GET("/captcha", api.HandleCaptcha)    // 获取验证码
 	r.GET("/ip-verify", api.HandleIpVerify) // IP校验
 	r.PUT("/cache", api.HandlePutCache)     // 缓存文件成功报告
 	r.PUT("/log", api.HandlePutLog)         // 批量日志提交
