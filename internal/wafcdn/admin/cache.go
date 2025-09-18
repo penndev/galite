@@ -61,6 +61,16 @@ func CacheDeleteAdd(c *gin.Context) {
 	if err := param.DB().Create(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "创建失败(" + err.Error() + ")"})
 	} else {
+		go model.CacheDeleteAction()
 		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
+	}
+}
+
+func CacheDeleteClear(c *gin.Context) {
+	err := model.CacheDeleteTruncate()
+	if err == nil {
+		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
+	} else {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "执行错误" + err.Error()})
 	}
 }

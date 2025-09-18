@@ -23,12 +23,15 @@ func InitAdminRoute(route *ginhelper.RoleRoute) {
 	// 查看缓存列表
 	route.GET("/cache", admin.CacheList)
 	route.DELETE("/cache", admin.CacheDelete)
+
 	route.GET("/cache/delete", admin.CacheList)
 	route.GET("/cache/delete/list", admin.CacheDeleteList)
 	route.PUT("/cache/delete/list", admin.CacheDeleteAdd)
+	route.DELETE("/cache-clear", admin.CacheDeleteClear)
 
 	// 查看访问日志列表
 	route.GET("/log", admin.LogList)
+	route.DELETE("/log-clear", admin.LogClear)
 	route.GET("/openresty/status", admin.OpenrestyStatus)
 	route.PUT("/openresty/start", admin.OpenrestyStart)
 	route.PUT("/openresty/stop", admin.OpenrestyStop)

@@ -3,10 +3,14 @@ package model
 import (
 	"fmt"
 	"log"
+	"path/filepath"
 	"strconv"
 	"time"
 
+	"github.com/penndev/galite/internal/logger"
 	"github.com/penndev/galite/pkg/orm"
+	"github.com/shirou/gopsutil/v4/disk"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
@@ -18,34 +22,51 @@ type CacheDelete struct {
 	Status bool   `json:"status" form:"status"` // 是否完成了任务。
 }
 
+func CacheDeleteTruncate() error {
+	return (&CacheDelete{}).DB().Exec("truncate table cache_deletes").Error
+}
+
+// 运行锁 防止删除并发 暂时不加锁
+var CacheDeleteActionRuning = false
+
+// 后台运行删除任务
 func CacheDeleteAction() {
+	if CacheDeleteActionRuning {
+		return
+	} else {
+		CacheDeleteActionRuning = true
+	}
+
 	defer func() {
+		CacheDeleteActionRuning = false
 		if r := recover(); r != nil {
 			log.Println("CacheDeleteAction panic:", r)
 		}
 	}()
-	time.Sleep(10 * time.Second)
-	for {
-		var cacheDelete CacheDelete
-		cacheDelete.DB().Where("status = false").Limit(1).Order("id ASC").Find(&cacheDelete)
-		if cacheDelete.ID < 1 {
-			time.Sleep(10 * time.Second)
-			continue
-		}
 
-		cache := &Cache{}
-		cacheWhere := func(db *gorm.DB) *gorm.DB {
-			db.Where("site_id = ? and uri like ?", cacheDelete.SiteID, cacheDelete.Uri+"%")
-			return db
+	for {
+		cacheDelete := &CacheDelete{
+			Status: false,
 		}
+		cacheDelete.Bind(cacheDelete, func(orm *gorm.DB) *gorm.DB {
+			return orm.Where("status = false").Order("id asc").Limit(1)
+		}).Find(cacheDelete)
+		if cacheDelete.ID < 1 {
+			return
+		}
+		cache := &Cache{}
+		query := cache.Bind(cache, func(orm *gorm.DB) *gorm.DB {
+			return orm.Where("site_id = ? and uri like ?", cacheDelete.SiteID, cacheDelete.Uri+"%")
+		}).BindGorm()
+
 		var total int64
-		query := cache.Bind(cache, cacheWhere).BindGorm()
 		query.Count(&total)
+
 		cacheDelete.Log += "匹配缓存数为：" + strconv.FormatInt(total, 10) + "\n"
 
 		deleteCacheTotal := 0
 		for {
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(10 * time.Millisecond)
 			var caches []Cache
 			if err := query.Limit(1000).Find(&caches).Error; err != nil {
 				log.Println(err)
@@ -64,5 +85,50 @@ func CacheDeleteAction() {
 				break
 			}
 		}
+	}
+}
+
+var cacheNumber uint64 = 0
+
+// 缓存阈值删除任务
+func CacheDeleteMaxUsed(path string) {
+	if CacheDeleteActionRuning {
+		return
+	} else {
+		CacheDeleteActionRuning = true
+	}
+
+	defer func() {
+		CacheDeleteActionRuning = false
+		if r := recover(); r != nil {
+			log.Println("CacheDeleteAction panic:", r)
+		}
+	}()
+	// 保存文件并清盘
+	allow := false
+	if cacheNumber%100 == 0 {
+		dir, maxUsed, n := filepath.Dir(path), 95.00, 200
+		stat, err := disk.Usage(dir)
+		if err != nil {
+			logger.L.Error("clearCache", zap.Error(err))
+		}
+		if stat.UsedPercent > maxUsed {
+			var caches []Cache
+			(&Cache{}).DB().Order("id asc").Limit(n).Find(&caches)
+			if err := CacheDeleteList(caches); err != nil {
+				logger.L.Error("clearCache", zap.Error(err))
+			}
+		}
+		if stat.UsedPercent > 97 {
+			allow = true
+		} else {
+			allow = false
+		}
+
+	}
+	if allow {
+		cacheNumber = 0
+	} else {
+		cacheNumber++
 	}
 }

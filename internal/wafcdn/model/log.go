@@ -1,6 +1,8 @@
 package model
 
-import "github.com/penndev/galite/pkg/orm"
+import (
+	"github.com/penndev/galite/pkg/orm"
+)
 
 type Log struct {
 	orm.ModelBase
@@ -15,4 +17,8 @@ type Log struct {
 	Status        int    `json:"status"`
 	BytesReceived int64  `json:"bytes_received"`
 	BytesSent     int64  `json:"bytes_sent"`
+}
+
+func LogTruncate() error {
+	return (&Log{}).DB().Exec("truncate table logs").Error
 }
