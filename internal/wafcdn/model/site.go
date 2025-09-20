@@ -36,6 +36,7 @@ type SiteSecurity struct {
 		Credentials string `json:"credentials"`
 		Age         int    `json:"age"`
 	} `json:"cors"`
+	Captcha bool `json:"captcha"`
 }
 
 type SiteStatic struct {
