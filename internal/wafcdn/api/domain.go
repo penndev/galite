@@ -66,6 +66,12 @@ func HandleDomain(c *gin.Context) {
 		proxyHeader[item.Name] = item.Value
 	}
 
+	server, err := replaceDomainWithIP(domain.Site.Proxy.Server)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "替换域名为IP失败: " + err.Error()})
+		return
+	}
+
 	c.JSON(200, gin.H{
 		"site":     domain.SiteID,
 		"sslForce": domain.SSLForce,
@@ -73,7 +79,7 @@ func HandleDomain(c *gin.Context) {
 		"security": domain.Site.Security,
 		"header":   respHeader,
 		"proxy": gin.H{
-			"server":            domain.Site.Proxy.Server,
+			"server":            server,
 			"host":              domain.Site.Proxy.Host,
 			"keepaliveTimeout":  domain.Site.Proxy.KeepaliveTimeout,
 			"keepaliveRequests": domain.Site.Proxy.KeepaliveRequests,
