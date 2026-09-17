@@ -6,14 +6,21 @@ import (
 
 	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/pkg/orm"
-	"github.com/penndev/gopkg/ip2region"
 )
+
+type IPRegion struct {
+	Country  string
+	Province string
+	City     string
+	County   string
+	ISP      string
+}
 
 type SiteSecurity struct {
 	Ip struct {
-		Status  bool                 `json:"status"`
-		Region  []ip2region.IPRegion `json:"region"`
-		Allowed bool                 `json:"allowed"`
+		Status  bool       `json:"status"`
+		Region  []IPRegion `json:"region"`
+		Allowed bool       `json:"allowed"`
 	} `json:"ip"`
 	Limit struct {
 		Status  bool `json:"status"`

@@ -1,14 +1,33 @@
 package admin
 
 import (
+	"errors"
 	"net/http"
+	"os"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/penndev/galite/internal/admin/bind"
+	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/internal/wafcdn/model"
-	"github.com/penndev/gopkg/ip2region"
 )
+
+func ensureSiteStaticDir(site *model.Site) error {
+	if site.Type != "static" {
+		return nil
+	}
+	root := strings.Trim(strings.ReplaceAll(strings.TrimSpace(site.Static.Root), "\\", "/"), "/")
+	if root == "" {
+		return errors.New("请填写静态站点目录名")
+	}
+	site.Static.Root = root
+	abs, err := FilesResolve(root)
+	if err != nil {
+		return err
+	}
+	return os.MkdirAll(abs, 0755)
+}
 
 // 添加新的站点
 
@@ -16,6 +35,10 @@ func SiteAdd(c *gin.Context) {
 	param := &model.Site{}
 	if err := c.BindJSON(&param); err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
+		return
+	}
+	if err := ensureSiteStaticDir(param); err != nil {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
 		return
 	}
 	if err := param.DB().Create(param).Error; err != nil {
@@ -47,6 +70,10 @@ func SiteUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
+	if err := ensureSiteStaticDir(param); err != nil {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
+		return
+	}
 	if err := param.DB().Updates(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "更新失败(" + err.Error() + ")"})
 	} else {
@@ -72,63 +99,43 @@ func SiteDelete(c *gin.Context) {
 
 // 获取 国家与省份
 func IPRegion(c *gin.Context) {
-	var region ip2region.IPRegion
+	if lib.IPRegion == nil {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "IPREGION_DB 未配置或文件不存在"})
+		return
+	}
+	var region model.IPRegion
 	c.BindQuery(&region)
 
-	// 筛选数据列表
-	current := &ip2region.Region[0] // 默认选择第一个国家
-	var data []string               // 返回数据内容
-
-	// 如果未选择国家，返回所有国家名称
-	if region.Country == "" {
-		for _, item := range ip2region.Region {
-			data = append(data, item.Name)
-		}
-		c.JSON(http.StatusOK, bind.DataList{Data: data})
-		return
-	} else {
-		for _, item := range ip2region.Region {
-			if region.Country == item.Name {
-				current = &item
+	parentID := uint32(0)
+	names := make([]string, 0, 3)
+	if region.Country != "" {
+		names = append(names, region.Country)
+	}
+	if region.Province != "" {
+		names = append(names, region.Province)
+	}
+	if region.City != "" {
+		names = append(names, region.City)
+	}
+	for _, name := range names {
+		found := false
+		for _, item := range lib.IPRegion.Areas(parentID) {
+			if item.Name == name {
+				parentID = item.ID
+				found = true
 				break
 			}
 		}
-	}
-
-	// 如果未选择省份，返回国家下的所有省份
-	if region.Province == "" {
-		for _, province := range current.Children {
-			data = append(data, province.Name)
-		}
-		c.JSON(http.StatusOK, bind.DataList{Data: data})
-		return
-	} else {
-		for _, item := range current.Children {
-			if region.Province == item.Name {
-				current = &item
-				break
-			}
+		if !found {
+			c.JSON(http.StatusOK, bind.DataList{Data: []string{}})
+			return
 		}
 	}
 
-	// 如果未选择城市，返回省份下的所有城市
-	if region.City == "" {
-		for _, child := range current.Children {
-			data = append(data, child.Name)
-		}
-		c.JSON(http.StatusOK, bind.DataList{Data: data})
-		return
-	} else {
-		for _, item := range current.Children {
-			if region.City == item.Name {
-				current = &item
-				break
-			}
-		}
-	}
-
-	for _, child := range current.Children {
-		data = append(data, child.Name)
+	children := lib.IPRegion.Areas(parentID)
+	data := make([]string, 0, len(children))
+	for _, item := range children {
+		data = append(data, item.Name)
 	}
 	c.JSON(http.StatusOK, bind.DataList{Data: data})
 }

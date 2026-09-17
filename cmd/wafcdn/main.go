@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/penndev/galite/internal"
@@ -11,6 +13,7 @@ import (
 	"github.com/penndev/galite/internal/model"
 	"github.com/penndev/galite/internal/wafcdn"
 	"github.com/penndev/galite/pkg/util"
+	"github.com/penndev/gopkg/ipregion"
 )
 
 func main() {
@@ -28,6 +31,24 @@ func main() {
 	model.Migration() // 每次启动都需要同步数据库结构 表自动迁移
 	if err := config.InitCache(); err != nil {
 		log.Panic(err)
+	}
+	ipregionDB := util.GetEnv("IPREGION_DB", "")
+	if ipregionDB != "" {
+		if _, err := os.Stat(ipregionDB); err == nil {
+			searcher, err := ipregion.Open(ipregionDB)
+			if err != nil {
+				log.Panic(err)
+			}
+			lib.SetIPRegion(searcher)
+		}
+	}
+	dataDir := util.GetEnv("WAFCDN_DATA_DIR", "/data")
+	for _, name := range []string{"proxy", "static"} {
+		dir := filepath.Join(dataDir, name)
+		info, err := os.Stat(dir)
+		if err != nil || !info.IsDir() {
+			log.Panic("目录不存在: " + dir)
+		}
 	}
 	// 设置nginx启动
 	lib.SetNginx(

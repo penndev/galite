@@ -5,9 +5,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/penndev/galite/internal/admin/bind"
+	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/internal/wafcdn/model"
 	"github.com/penndev/galite/pkg/util"
-	"github.com/penndev/gopkg/ip2region"
 )
 
 func HandleIpVerify(c *gin.Context) {
@@ -28,7 +28,32 @@ func HandleIpVerify(c *gin.Context) {
 		return
 	}
 	if len(ipStruct.Region) > 0 {
-		reqRegion := ip2region.Find(c.Query("ip"))
+		if lib.IPRegion == nil {
+			c.JSON(http.StatusForbidden, bind.Message{Message: "IPREGION_DB 未配置或文件不存在"})
+			return
+		}
+		info, err := lib.IPRegion.Find(c.Query("ip"))
+		if err != nil {
+			c.JSON(http.StatusForbidden, bind.Message{Message: err.Error()})
+			return
+		}
+		var names []string
+		for a := &info.Area; a != nil && a.Name != ""; a = a.Parent {
+			names = append(names, a.Name)
+		}
+		for i, j := 0, len(names)-1; i < j; i, j = i+1, j-1 {
+			names[i], names[j] = names[j], names[i]
+		}
+		for len(names) < 4 {
+			names = append(names, "")
+		}
+		reqRegion := model.IPRegion{
+			Country:  names[0],
+			Province: names[1],
+			City:     names[2],
+			County:   names[3],
+			ISP:      info.ISP.Name,
+		}
 		for _, region := range ipStruct.Region {
 			if region.Country != "" && region.Country != reqRegion.Country { // 国家
 				continue

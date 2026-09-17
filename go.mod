@@ -1,8 +1,6 @@
 module github.com/penndev/galite
 
-go 1.23.0
-
-toolchain go1.23.3
+go 1.24.0
 
 require (
 	github.com/gin-gonic/gin v1.10.1
@@ -10,7 +8,7 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.2.3
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1
-	github.com/penndev/gopkg v0.3.1
+	github.com/penndev/gopkg v0.5.1
 	github.com/redis/go-redis/v9 v9.11.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.41.0

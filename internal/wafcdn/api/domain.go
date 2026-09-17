@@ -1,15 +1,14 @@
 package api
 
 import (
-	"bytes"
-	"encoding/base64"
-	"image/png"
 	"net/http"
+	"path/filepath"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/penndev/galite/internal/wafcdn/admin"
 	"github.com/penndev/galite/internal/wafcdn/model"
-	"github.com/penndev/gopkg/captcha2"
+	"github.com/penndev/gopkg/captcha/drag"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -66,10 +65,28 @@ func HandleDomain(c *gin.Context) {
 		proxyHeader[item.Name] = item.Value
 	}
 
-	server, err := replaceDomainWithIP(domain.Site.Proxy.Server)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "替换域名为IP失败: " + err.Error()})
-		return
+	server := domain.Site.Proxy.Server
+	if domain.Site.Type == "proxy" {
+		replaced, err := replaceDomainWithIP(domain.Site.Proxy.Server)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "替换域名为IP失败: " + err.Error()})
+			return
+		}
+		server = replaced
+	}
+
+	staticRoot := ""
+	if domain.Site.Type == "static" {
+		if domain.Site.Static.Root == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "static root not set"})
+			return
+		}
+		abs, err := admin.FilesResolve(domain.Site.Static.Root)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		staticRoot = filepath.ToSlash(abs)
 	}
 
 	c.JSON(200, gin.H{
@@ -78,6 +95,9 @@ func HandleDomain(c *gin.Context) {
 		"type":     domain.Site.Type,
 		"security": domain.Site.Security,
 		"header":   respHeader,
+		"static": gin.H{
+			"root": staticRoot,
+		},
 		"proxy": gin.H{
 			"server":            server,
 			"host":              domain.Site.Proxy.Host,
@@ -94,36 +114,21 @@ func HandleDomain(c *gin.Context) {
 // @url=/@wafcdn/captcha?host=@host
 // @return 验证码配置
 func HandleCaptcha(c *gin.Context) {
-
-	img := &captcha2.NewDragImg{
-		ImageWidth:  300,
-		ImageHeight: 150,
-	}
-	img.DragDraw()
-
-	bufImage := new(bytes.Buffer)
-	if err := png.Encode(bufImage, img.Image); err != nil {
+	data, point, err := drag.New()
+	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
-	bufPiece := new(bytes.Buffer)
-	if err := png.Encode(bufPiece, img.Piece); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
 	id := uuid.New().String()
 	c.JSON(http.StatusOK, gin.H{
 		"id":          id,
-		"imageBase64": "data:image/png;base64," + base64.StdEncoding.EncodeToString(bufImage.Bytes()),
-		"imageWidth":  img.ImageWidth,
-		"imageHeight": img.ImageHeight,
-		"pieceWidth":  img.PieceWidth,
-		"pieceHeight": img.PieceHeight,
-		"pieceBase64": "data:image/png;base64," + base64.StdEncoding.EncodeToString(bufPiece.Bytes()),
-		"verifyX":     img.PieceX,
-		"verifyY":     img.PieceY,
+		"imageBase64": data.ImageBase64,
+		"imageWidth":  data.ImageWidth,
+		"imageHeight": data.ImageHeight,
+		"pieceWidth":  data.PieceWidth,
+		"pieceHeight": data.PieceHeight,
+		"pieceBase64": data.PieceBase64,
+		"verifyX":     point.X,
+		"verifyY":     point.Y,
 	})
-
 }

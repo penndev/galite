@@ -3,11 +3,15 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/penndev/galite/internal"
 	"github.com/penndev/galite/internal/config"
+	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/internal/model"
+	"github.com/penndev/galite/pkg/util"
+	"github.com/penndev/gopkg/ipregion"
 )
 
 func main() {
@@ -27,6 +31,16 @@ func main() {
 	}
 	if err := config.InitCache(); err != nil {
 		log.Panic(err)
+	}
+	ipregionDB := util.GetEnv("IPREGION_DB", "")
+	if ipregionDB != "" {
+		if _, err := os.Stat(ipregionDB); err == nil {
+			searcher, err := ipregion.Open(ipregionDB)
+			if err != nil {
+				log.Panic(err)
+			}
+			lib.SetIPRegion(searcher)
+		}
 	}
 
 	// 启动Http服务器 高性能版

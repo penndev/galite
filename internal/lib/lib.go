@@ -5,6 +5,7 @@ import (
 
 	"github.com/penndev/galite/pkg/cache"
 	"github.com/penndev/galite/pkg/orm"
+	"github.com/penndev/gopkg/ipregion"
 	"gorm.io/gorm"
 )
 
@@ -33,6 +34,15 @@ func SetGorm(db *gorm.DB) {
 	}
 	orm.SetDB(db)
 	GormDB = db
+}
+
+var IPRegion *ipregion.Searcher
+
+func SetIPRegion(s *ipregion.Searcher) {
+	if s == nil {
+		log.Panic("ipregion is nil")
+	}
+	IPRegion = s
 }
 
 // NginxManager 管理nginx的结构体

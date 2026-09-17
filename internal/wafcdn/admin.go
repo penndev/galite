@@ -14,6 +14,14 @@ func InitAdminRoute(route *ginhelper.RoleRoute) {
 	route.DELETE("/site", admin.SiteDelete)
 	route.GET("/ip-region", admin.IPRegion)
 
+	// 静态文件管理
+	route.GET("/files", admin.FilesList)
+	route.POST("/files", admin.FilesMkdir)
+	route.PUT("/files", admin.FilesRename)
+	route.DELETE("/files", admin.FilesDelete)
+	route.GET("/files/file", admin.FilesDownload)
+	route.POST("/files/file", admin.FilesUpload)
+
 	// 管理域名
 	route.GET("/domain", admin.DomainList)
 	route.POST("/domain", admin.DomainAdd)
