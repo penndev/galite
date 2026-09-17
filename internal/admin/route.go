@@ -8,6 +8,7 @@ import (
 	"github.com/penndev/galite/internal/admin/middle"
 	"github.com/penndev/galite/internal/admin/system"
 	"github.com/penndev/galite/internal/config"
+	"github.com/penndev/galite/internal/admin/files"
 	"github.com/penndev/galite/internal/wafcdn"
 	"github.com/penndev/galite/pkg/ginhelper"
 )
@@ -49,4 +50,7 @@ func InitRoute(r *ginhelper.RouterGroup) {
 
 	// 挂载wafcdn后台管理
 	route.GroupPush("/wafcdn", wafcdn.InitAdminRoute)
+
+	// 文件管理
+	route.GroupPush("/files", files.InitRoute)
 }
