@@ -46,10 +46,6 @@ type SiteSecurity struct {
 	Captcha bool `json:"captcha"`
 }
 
-type SiteStatic struct {
-	Root string `json:"root"`
-}
-
 type SiteHeader struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
@@ -71,6 +67,16 @@ type SiteProxy struct {
 	} `json:"cache"`
 }
 
+type SiteLocation struct {
+	Path  string    `json:"path"`
+	Proxy SiteProxy `json:"proxy"`
+}
+
+type SiteStatic struct {
+	Root      string         `json:"root"`
+	Locations []SiteLocation `json:"locations"`
+}
+
 type Site struct {
 	orm.ModelBase
 	Type     string       `json:"type"`
@@ -81,7 +87,8 @@ type Site struct {
 	Header   []SiteHeader `gorm:"serializer:json" json:"header"`
 
 	// 逻辑关联
-	Domains []Domain // 域名one to many
+	Domains   []Domain `json:"Domains"` // 域名one to many
+	DomainIDs *[]uint  `json:"domainIds" gorm:"-"`
 }
 
 func GetSiteByID(id uint) (*Site, error) {

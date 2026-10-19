@@ -22,12 +22,18 @@ func InitAdminRoute(route *ginhelper.RoleRoute) {
 	route.GET("/files/file", admin.FilesDownload)
 	route.POST("/files/file", admin.FilesUpload)
 
+	// 证书
+	route.GET("/cert", admin.CertList)
+	route.POST("/cert", admin.CertSave)
+	route.PUT("/cert", admin.CertSave)
+	route.DELETE("/cert", admin.CertDelete)
+	route.POST("/cert/acme", admin.CertAcme)
+
 	// 管理域名
 	route.GET("/domain", admin.DomainList)
 	route.POST("/domain", admin.DomainAdd)
 	route.PUT("/domain", admin.DomainAdd)
 	route.DELETE("/domain", admin.DomainDelete)
-	route.POST("/domain/acme", admin.DomainAcme) // ACME证书申请
 	// 查看缓存列表
 	route.GET("/cache", admin.CacheList)
 	route.DELETE("/cache", admin.CacheDelete)

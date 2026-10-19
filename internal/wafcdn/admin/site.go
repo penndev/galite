@@ -3,6 +3,7 @@ package admin
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -22,11 +23,73 @@ func ensureSiteStaticDir(site *model.Site) error {
 		return errors.New("请填写静态站点目录名")
 	}
 	site.Static.Root = root
+	if err := normalizeStaticLocations(site); err != nil {
+		return err
+	}
 	abs, err := FilesResolve(root)
 	if err != nil {
 		return err
 	}
 	return os.MkdirAll(abs, 0755)
+}
+
+func normalizeStaticLocations(site *model.Site) error {
+	seen := map[string]struct{}{}
+	for i := range site.Static.Locations {
+		loc := &site.Static.Locations[i]
+		path := strings.TrimSpace(loc.Path)
+		if path == "" {
+			return errors.New("路径不能为空")
+		}
+		if !strings.HasPrefix(path, "/") {
+			return errors.New("路径必须以 / 开头")
+		}
+		path = strings.TrimRight(path, "/")
+		if path == "" || strings.Contains(path, "..") || strings.Contains(path, "//") || strings.Contains(path, "?") || strings.Contains(path, "#") || strings.Contains(path, "\\") {
+			return errors.New("路径不合法")
+		}
+		if _, ok := seen[path]; ok {
+			return errors.New("路径重复: " + path)
+		}
+		seen[path] = struct{}{}
+		loc.Path = path
+
+		server, err := normalizeProxyServer(loc.Proxy.Server)
+		if err != nil {
+			return errors.New("路径 " + path + " 的" + err.Error())
+		}
+		loc.Proxy.Server = server
+	}
+	return nil
+}
+
+func normalizeProxyServer(server string) (string, error) {
+	parsed, err := url.Parse(strings.TrimSpace(server))
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Hostname() == "" || parsed.Port() == "" {
+		return "", errors.New("反代地址必须是 http(s)://主机:端口，路径可选")
+	}
+	if parsed.RawQuery != "" || parsed.Fragment != "" {
+		return "", errors.New("反代地址不能带参数")
+	}
+	path := strings.TrimRight(parsed.EscapedPath(), "/")
+	if path == "/" || path == "" {
+		path = ""
+	} else if !strings.HasPrefix(path, "/") || strings.Contains(path, "..") {
+		return "", errors.New("反代路径不合法")
+	}
+	return parsed.Scheme + "://" + parsed.Host + path, nil
+}
+
+func normalizeSiteProxy(site *model.Site) error {
+	if site.Type != "proxy" {
+		return nil
+	}
+	server, err := normalizeProxyServer(site.Proxy.Server)
+	if err != nil {
+		return err
+	}
+	site.Proxy.Server = server
+	return nil
 }
 
 // 添加新的站点
@@ -41,11 +104,19 @@ func SiteAdd(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
 		return
 	}
+	if err := normalizeSiteProxy(param); err != nil {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
+		return
+	}
 	if err := param.DB().Create(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "创建失败(" + err.Error() + ")"})
-	} else {
-		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
+		return
 	}
+	if err := bindSiteDomains(param.ID, param.DomainIDs); err != nil {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, bind.Message{Message: "完成"})
 }
 
 // 获取站点列表
@@ -74,11 +145,37 @@ func SiteUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
 		return
 	}
+	if err := normalizeSiteProxy(param); err != nil {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
+		return
+	}
 	if err := param.DB().Updates(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "更新失败(" + err.Error() + ")"})
-	} else {
-		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
+		return
 	}
+	if err := bindSiteDomains(param.ID, param.DomainIDs); err != nil {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, bind.Message{Message: "完成"})
+}
+
+func bindSiteDomains(siteID uint, ids *[]uint) error {
+	if ids == nil || siteID == 0 {
+		return nil
+	}
+	db := (&model.Domain{}).DB()
+	clear := db.Model(&model.Domain{}).Where("site_id = ?", siteID)
+	if len(*ids) > 0 {
+		clear = clear.Where("id NOT IN ?", *ids)
+	}
+	if err := clear.Updates(map[string]any{"site_id": nil}).Error; err != nil {
+		return err
+	}
+	if len(*ids) == 0 {
+		return nil
+	}
+	return db.Model(&model.Domain{}).Where("id IN ?", *ids).Update("site_id", siteID).Error
 }
 
 // 删除资料

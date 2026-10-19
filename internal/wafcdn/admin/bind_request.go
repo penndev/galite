@@ -3,7 +3,6 @@ package admin
 import (
 	"github.com/penndev/galite/internal/wafcdn/model"
 	"github.com/penndev/galite/pkg/orm"
-	"golang.org/x/net/publicsuffix"
 	"gorm.io/gorm"
 )
 
@@ -41,8 +40,7 @@ func (b *bindDomainParam) Param() *model.Domain {
 	m := &model.Domain{}
 	w := func(orm *gorm.DB) *gorm.DB {
 		if b.Domain != "" {
-			domain, _ := publicsuffix.EffectiveTLDPlusOne(b.Domain)
-			orm = orm.Where("domain like ?", "%"+domain)
+			orm = orm.Where("domain like ?", "%"+b.Domain+"%")
 		}
 		if b.Remark != "" {
 			orm = orm.Where("remark like ?", "%"+b.Remark+"%")
@@ -50,7 +48,24 @@ func (b *bindDomainParam) Param() *model.Domain {
 		if b.SiteID != nil {
 			m.SiteID = b.SiteID
 		}
-		return orm.Where(m)
+		return orm.Where(m).Preload("Site").Preload("Cert")
+	}
+	m.Bind(m, w, b)
+	return m
+}
+
+type bindCertParam struct {
+	orm.BindListParam
+	Remark string `form:"remark"`
+}
+
+func (b *bindCertParam) Param() *model.Cert {
+	m := &model.Cert{}
+	w := func(orm *gorm.DB) *gorm.DB {
+		if b.Remark != "" {
+			orm = orm.Where("remark like ?", "%"+b.Remark+"%")
+		}
+		return orm
 	}
 	m.Bind(m, w, b)
 	return m
