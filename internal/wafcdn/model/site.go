@@ -86,9 +86,7 @@ type Site struct {
 	Proxy    SiteProxy    `gorm:"serializer:json" json:"proxy"`
 	Header   []SiteHeader `gorm:"serializer:json" json:"header"`
 
-	// 逻辑关联
-	Domains   []Domain `json:"Domains"` // 域名one to many
-	DomainIDs *[]uint  `json:"domainIds" gorm:"-"`
+	Domains []Domain `json:"Domains"`
 }
 
 func GetSiteByID(id uint) (*Site, error) {

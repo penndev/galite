@@ -22,11 +22,21 @@ func DomainAdd(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "请填写域名"})
 		return
 	}
-	if param.SSL && param.CertID == nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "启用 HTTPS 请选择证书"})
+	if param.SiteID == nil || *param.SiteID == 0 {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "站点不存在"})
 		return
 	}
-	if err := param.DB().Omit("Site", "Cert").Save(param).Error; err != nil {
+	if err := (&model.Site{}).DB().First(&model.Site{}, *param.SiteID).Error; err != nil {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "站点不存在"})
+		return
+	}
+	if param.SSLForce {
+		if _, ok := model.FindCertForHost(param.Domain); !ok {
+			c.JSON(http.StatusBadRequest, bind.Message{Message: "没有覆盖该域名的证书，不能开启自动跳转 HTTPS"})
+			return
+		}
+	}
+	if err := param.DB().Omit("Site").Save(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "存储失败(" + err.Error() + ")"})
 	} else {
 		c.JSON(http.StatusOK, bind.Message{Message: "完成"})
@@ -45,9 +55,6 @@ func DomainList(c *gin.Context) {
 
 	m := param.Param() //处理筛选
 	m.List(&total, &list)
-	for i := range list {
-		list[i].Cert.ParseCertInfo()
-	}
 	c.JSON(http.StatusOK, bind.DataList{Total: total, Data: list})
 }
 

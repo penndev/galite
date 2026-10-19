@@ -48,7 +48,7 @@ func (b *bindDomainParam) Param() *model.Domain {
 		if b.SiteID != nil {
 			m.SiteID = b.SiteID
 		}
-		return orm.Where(m).Preload("Site").Preload("Cert")
+		return orm.Where(m).Preload("Site")
 	}
 	m.Bind(m, w, b)
 	return m

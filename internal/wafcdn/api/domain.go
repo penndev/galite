@@ -10,7 +10,6 @@ import (
 	"github.com/penndev/galite/internal/wafcdn/admin"
 	"github.com/penndev/galite/internal/wafcdn/model"
 	"github.com/penndev/gopkg/captcha/drag"
-	"golang.org/x/net/publicsuffix"
 )
 
 // 对nginx提供接口 获取证书配置
@@ -18,7 +17,7 @@ import (
 // @return 配置信息
 func findDomain(host string) (model.Domain, error) {
 	domain := model.Domain{}
-	err := domain.DB().Where("domain = ?", host).Preload("Site").Preload("Cert").First(&domain).Error
+	err := domain.DB().Where("domain = ?", host).Preload("Site").First(&domain).Error
 	if err == nil || !strings.Contains(host, ".") || strings.HasPrefix(host, "*.") {
 		return domain, err
 	}
@@ -28,7 +27,7 @@ func findDomain(host string) (model.Domain, error) {
 	}
 	wild := "*." + rest
 	domain = model.Domain{}
-	err = domain.DB().Where("domain = ?", wild).Preload("Site").Preload("Cert").First(&domain).Error
+	err = domain.DB().Where("domain = ?", wild).Preload("Site").First(&domain).Error
 	return domain, err
 }
 
@@ -40,17 +39,8 @@ func HandleSSL(c *gin.Context) {
 		})
 		return
 	}
-	cert := model.Cert{}
-	domain, err := findDomain(host)
-	if err == nil && !domain.SSL {
-		c.JSON(400, gin.H{"error": "ssl not found"})
-		return
-	}
-	if err == nil && domain.Cert.PublicKey != "" && domain.Cert.PrivateKey != "" {
-		cert = domain.Cert
-	} else if wild, ok := findWildcardCert(host); ok {
-		cert = wild
-	} else {
+	cert, ok := model.FindCertForHost(host)
+	if !ok {
 		c.JSON(400, gin.H{"error": "ssl not found"})
 		return
 	}
@@ -58,23 +48,6 @@ func HandleSSL(c *gin.Context) {
 		"publicKey":  cert.PublicKey,
 		"privateKey": cert.PrivateKey,
 	})
-}
-
-func findWildcardCert(host string) (model.Cert, bool) {
-	apex, err := publicsuffix.EffectiveTLDPlusOne(host)
-	if err != nil || apex == "" || host == apex {
-		return model.Cert{}, false
-	}
-	prefix := strings.TrimSuffix(host, "."+apex)
-	if prefix == "" || strings.Contains(prefix, ".") {
-		return model.Cert{}, false
-	}
-	cert := model.Cert{}
-	err = cert.DB().Model(&cert).Where("wildcard = ? AND domain = ?", true, apex).First(&cert).Error
-	if err != nil || cert.PublicKey == "" || cert.PrivateKey == "" {
-		return model.Cert{}, false
-	}
-	return cert, true
 }
 
 // 对nginx提供接口 获取域名配置信息
@@ -91,7 +64,6 @@ func HandleDomain(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-
 	// 格式返回头
 	respHeader := make(map[string]string)
 	for _, item := range domain.Site.Header {

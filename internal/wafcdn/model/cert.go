@@ -4,6 +4,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"strings"
 
 	"github.com/penndev/galite/pkg/orm"
 )
@@ -47,4 +48,50 @@ func (m *Cert) ParseCertInfo() error {
 		DNSNames:  cert.DNSNames,
 	}
 	return nil
+}
+
+func dnsNameCovers(pattern, host string) bool {
+	pattern = strings.ToLower(strings.TrimSpace(pattern))
+	host = strings.ToLower(strings.TrimSpace(host))
+	if pattern == "" || host == "" {
+		return false
+	}
+	if pattern == host {
+		return true
+	}
+	if !strings.HasPrefix(pattern, "*.") || strings.HasPrefix(host, "*.") {
+		return false
+	}
+	suffix := pattern[1:]
+	if !strings.HasSuffix(host, suffix) {
+		return false
+	}
+	label := strings.TrimSuffix(host, suffix)
+	return label != "" && !strings.Contains(label, ".")
+}
+
+func (m *Cert) covers(host string) bool {
+	if err := m.ParseCertInfo(); err != nil {
+		return false
+	}
+	for _, name := range m.CertInfo.DNSNames {
+		if dnsNameCovers(name, host) {
+			return true
+		}
+	}
+	return false
+}
+
+func FindCertForHost(host string) (Cert, bool) {
+	var list []Cert
+	err := (&Cert{}).DB().Where("public_key <> '' AND private_key <> ''").Find(&list).Error
+	if err != nil {
+		return Cert{}, false
+	}
+	for i := range list {
+		if list[i].covers(host) {
+			return list[i], true
+		}
+	}
+	return Cert{}, false
 }

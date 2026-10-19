@@ -17,7 +17,6 @@ import (
 	"github.com/penndev/galite/internal/lib"
 	"github.com/penndev/galite/internal/wafcdn/model"
 	"github.com/penndev/gopkg/acme"
-	"golang.org/x/net/publicsuffix"
 )
 
 type acmeDNSSession struct {
@@ -57,7 +56,7 @@ func CertSave(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "证书错误" + err.Error()})
 		return
 	}
-	if err := normalizeCertWildcard(param); err != nil {
+	if err := normalizeCert(param); err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
 		return
 	}
@@ -68,45 +67,45 @@ func CertSave(c *gin.Context) {
 	c.JSON(http.StatusOK, bind.Message{Message: "完成"})
 }
 
-func normalizeCertWildcard(cert *model.Cert) error {
-	for _, name := range cert.CertInfo.DNSNames {
-		if strings.HasPrefix(name, "*.") && cert.Domain == "" {
-			cert.Wildcard = true
-			cert.Domain = strings.TrimPrefix(name, "*.")
-			break
-		}
+func normalizeCert(cert *model.Cert) error {
+	cert.Domain = strings.TrimPrefix(strings.ToLower(strings.TrimSpace(cert.Domain)), "*.")
+	if cert.Domain == "" || strings.Contains(cert.Domain, "*") || strings.ContainsAny(cert.Domain, " /") {
+		return errors.New("请填写域名，例如 example.com")
 	}
-	if !cert.Wildcard {
-		cert.Domain = ""
-		return nil
-	}
-	apex, err := publicsuffix.EffectiveTLDPlusOne(strings.TrimSpace(cert.Domain))
-	if err != nil || apex == "" {
-		return errors.New("请填写泛解析主域名，例如 example.com")
-	}
-	cert.Domain = apex
 	if cert.PublicKey == "" {
 		return nil
 	}
-	want := "*." + apex
+	if len(cert.CertInfo.DNSNames) == 0 {
+		return errors.New("证书没有域名")
+	}
+	apex := cert.Domain
+	wild := "*." + apex
 	for _, name := range cert.CertInfo.DNSNames {
-		if strings.EqualFold(name, want) {
+		name = strings.ToLower(name)
+		if name != apex && name != wild {
+			return errors.New("证书只能包含域名，或再加它的泛解析")
+		}
+	}
+	if !cert.Wildcard {
+		for _, name := range cert.CertInfo.DNSNames {
+			if strings.EqualFold(name, wild) {
+				return errors.New("证书含有泛解析，请打开泛解析")
+			}
+		}
+		return nil
+	}
+	for _, name := range cert.CertInfo.DNSNames {
+		if strings.EqualFold(name, wild) {
 			return nil
 		}
 	}
-	return errors.New("证书未包含 " + want)
+	return errors.New("证书未包含 " + wild)
 }
 
 func CertDelete(c *gin.Context) {
 	id, err := strconv.Atoi(c.Query("id"))
 	if id < 1 || err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误"})
-		return
-	}
-	var count int64
-	(&model.Domain{}).DB().Model(&model.Domain{}).Where("cert_id = ?", id).Count(&count)
-	if count > 0 {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "仍有域名绑定该证书"})
 		return
 	}
 	param := &model.Cert{}
@@ -135,13 +134,15 @@ func CertAcme(c *gin.Context) {
 		finishCertAcmeDNS(c, body.Session)
 		return
 	}
-	domainName := strings.TrimSpace(body.Domain)
-	if strings.HasPrefix(domainName, "*.") {
-		startCertAcmeDNS(c, body.ID, body.Remark, body.Email, domainName)
+	domainName := strings.TrimPrefix(strings.ToLower(strings.TrimSpace(body.Domain)), "*.")
+	if domainName == "" || strings.Contains(domainName, "*") || body.Email == "" {
+		c.JSON(http.StatusBadRequest, bind.Message{Message: "必须设置域名与邮箱"})
 		return
 	}
-	if domainName == "" || body.Email == "" {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: "必须设置域名与邮箱"})
+	names := []string{domainName}
+	if body.Wildcard {
+		names = append(names, "*."+domainName)
+		startCertAcmeDNS(c, body.ID, body.Remark, body.Email, names)
 		return
 	}
 	cert := &model.Cert{}
@@ -158,6 +159,8 @@ func CertAcme(c *gin.Context) {
 	if cert.Remark == "" {
 		cert.Remark = domainName
 	}
+	cert.Domain = domainName
+	cert.Wildcard = false
 
 	preToken := "pre_" + base64.RawURLEncoding.EncodeToString([]byte(domainName))
 	lib.Cache.SetAny("acme:"+preToken, domainName, 5*time.Minute)
@@ -166,8 +169,8 @@ func CertAcme(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "无法访问验证URL: " + err.Error()})
 		return
 	}
-	defer resp.Body.Close()
 	respBody, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "读取内容失败: " + err.Error()})
 		return
@@ -178,7 +181,7 @@ func CertAcme(c *gin.Context) {
 	}
 
 	auth := &acme.Auth{
-		Domain: []string{domainName},
+		Domain: names,
 		Email:  cert.Email,
 	}
 	tasks, err := auth.AuthorizeOrder()
@@ -204,7 +207,7 @@ func CertAcme(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "证书错误" + err.Error()})
 		return
 	}
-	if err := normalizeCertWildcard(cert); err != nil {
+	if err := normalizeCert(cert); err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
 		return
 	}
@@ -215,13 +218,13 @@ func CertAcme(c *gin.Context) {
 	c.JSON(http.StatusOK, bind.Message{Message: "证书已生成并保存"})
 }
 
-func startCertAcmeDNS(c *gin.Context, certID uint, remark, email, domainName string) {
-	if email == "" {
+func startCertAcmeDNS(c *gin.Context, certID uint, remark, email string, domains []string) {
+	if email == "" || len(domains) == 0 {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "必须设置域名与邮箱"})
 		return
 	}
 	auth := &acme.Auth{
-		Domain: []string{domainName},
+		Domain: domains,
 		Email:  email,
 	}
 	tasks, err := auth.AuthorizeOrder()
@@ -237,7 +240,7 @@ func startCertAcmeDNS(c *gin.Context, certID uint, remark, email, domainName str
 		}
 		dnsTasks = append(dnsTasks, task)
 		records = append(records, gin.H{
-			"name":  "_acme-challenge." + task.Domain,
+			"name":  "_acme-challenge." + strings.TrimPrefix(task.Domain, "*."),
 			"value": task.KeyAuth,
 		})
 	}
@@ -304,7 +307,7 @@ func finishCertAcmeDNS(c *gin.Context, sessionID string) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "证书错误" + err.Error()})
 		return
 	}
-	if err := normalizeCertWildcard(cert); err != nil {
+	if err := normalizeCert(cert); err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
 		return
 	}

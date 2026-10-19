@@ -112,10 +112,6 @@ func SiteAdd(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "创建失败(" + err.Error() + ")"})
 		return
 	}
-	if err := bindSiteDomains(param.ID, param.DomainIDs); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
-		return
-	}
 	c.JSON(http.StatusOK, bind.Message{Message: "完成"})
 }
 
@@ -153,29 +149,7 @@ func SiteUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "更新失败(" + err.Error() + ")"})
 		return
 	}
-	if err := bindSiteDomains(param.ID, param.DomainIDs); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
-		return
-	}
 	c.JSON(http.StatusOK, bind.Message{Message: "完成"})
-}
-
-func bindSiteDomains(siteID uint, ids *[]uint) error {
-	if ids == nil || siteID == 0 {
-		return nil
-	}
-	db := (&model.Domain{}).DB()
-	clear := db.Model(&model.Domain{}).Where("site_id = ?", siteID)
-	if len(*ids) > 0 {
-		clear = clear.Where("id NOT IN ?", *ids)
-	}
-	if err := clear.Updates(map[string]any{"site_id": nil}).Error; err != nil {
-		return err
-	}
-	if len(*ids) == 0 {
-		return nil
-	}
-	return db.Model(&model.Domain{}).Where("id IN ?", *ids).Update("site_id", siteID).Error
 }
 
 // 删除资料
