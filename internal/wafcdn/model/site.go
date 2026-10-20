@@ -68,23 +68,20 @@ type SiteProxy struct {
 }
 
 type SiteLocation struct {
-	Path  string    `json:"path"`
-	Proxy SiteProxy `json:"proxy"`
-}
-
-type SiteStatic struct {
-	Root      string         `json:"root"`
-	Locations []SiteLocation `json:"locations"`
+	Path     string     `json:"path"`
+	Action   string     `json:"action"` // proxy 反向代理，redirect 重定向
+	Proxy    *SiteProxy `json:"proxy,omitempty"`
+	Redirect string     `json:"redirect,omitempty"`
+	Code     int        `json:"code,omitempty"`
 }
 
 type Site struct {
 	orm.ModelBase
-	Type     string       `json:"type"`
-	Remark   string       `json:"remark"`
-	Security SiteSecurity `gorm:"serializer:json" json:"security"`
-	Static   SiteStatic   `gorm:"serializer:json" json:"static"`
-	Proxy    SiteProxy    `gorm:"serializer:json" json:"proxy"`
-	Header   []SiteHeader `gorm:"serializer:json" json:"header"`
+	Remark    string         `json:"remark"`
+	Root      string         `json:"root"`
+	Locations []SiteLocation `gorm:"serializer:json" json:"locations"`
+	Security  SiteSecurity   `gorm:"serializer:json" json:"security"`
+	Header    []SiteHeader   `gorm:"serializer:json" json:"header"`
 
 	Domains []Domain `json:"Domains"`
 }

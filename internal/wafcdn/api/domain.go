@@ -69,49 +69,46 @@ func HandleDomain(c *gin.Context) {
 	for _, item := range domain.Site.Header {
 		respHeader[item.Name] = item.Value
 	}
-	proxyBody, err := proxyPayload(domain.Site.Proxy, domain.Site.Type == "proxy")
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "替换域名为IP失败: " + err.Error()})
+	if domain.Site.Root == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "site root not set"})
 		return
 	}
-
-	staticRoot := ""
+	abs, err := admin.FilesResolve(domain.Site.Root)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	locations := make([]gin.H, 0)
-	if domain.Site.Type == "static" {
-		if domain.Site.Static.Root == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "static root not set"})
-			return
+	for _, loc := range domain.Site.Locations {
+		item := gin.H{
+			"path":   loc.Path,
+			"action": loc.Action,
 		}
-		abs, err := admin.FilesResolve(domain.Site.Static.Root)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-			return
-		}
-		staticRoot = filepath.ToSlash(abs)
-		for _, loc := range domain.Site.Static.Locations {
-			locProxy, err := proxyPayload(loc.Proxy, true)
+		if loc.Action == "proxy" {
+			if loc.Proxy == nil {
+				c.JSON(http.StatusBadRequest, gin.H{"error": "路径 " + loc.Path + " 缺少回源配置"})
+				return
+			}
+			locProxy, err := proxyPayload(*loc.Proxy, true)
 			if err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "替换域名为IP失败: " + err.Error()})
 				return
 			}
-			locations = append(locations, gin.H{
-				"path":  loc.Path,
-				"proxy": locProxy,
-			})
+			item["proxy"] = locProxy
+		} else if loc.Action == "redirect" {
+			item["redirect"] = loc.Redirect
+			item["code"] = loc.Code
 		}
+		locations = append(locations, item)
 	}
 
 	c.JSON(200, gin.H{
-		"site":     domain.SiteID,
-		"sslForce": domain.SSLForce,
-		"type":     domain.Site.Type,
-		"security": domain.Site.Security,
-		"header":   respHeader,
-		"static": gin.H{
-			"root":      staticRoot,
-			"locations": locations,
-		},
-		"proxy": proxyBody,
+		"site":      domain.SiteID,
+		"sslForce":  domain.SSLForce,
+		"security":  domain.Site.Security,
+		"header":    respHeader,
+		"root":      filepath.ToSlash(abs),
+		"locations": locations,
 	})
 }
 

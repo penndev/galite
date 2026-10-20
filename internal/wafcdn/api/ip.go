@@ -27,51 +27,45 @@ func HandleIpVerify(c *gin.Context) {
 		c.JSON(http.StatusForbidden, bind.Message{Message: "status not enable"})
 		return
 	}
-	if len(ipStruct.Region) > 0 {
+	ip := c.Query("ip")
+	areaName := ""
+	ispName := ""
+	if len(ipStruct.Region) > 0 || ipStruct.Allowed {
 		if lib.IPRegion == nil {
-			c.JSON(http.StatusForbidden, bind.Message{Message: "IPREGION_DB 未配置或文件不存在"})
-			return
+			if len(ipStruct.Region) > 0 {
+				c.JSON(http.StatusForbidden, bind.Message{Message: "IPREGION_DB 未配置或文件不存在"})
+				return
+			}
+		} else if info, err := lib.IPRegion.Find(ip); err != nil {
+			if len(ipStruct.Region) > 0 {
+				c.JSON(http.StatusForbidden, bind.Message{Message: err.Error()})
+				return
+			}
+		} else {
+			areaName = info.Area.Name
+			ispName = info.ISP.Name
 		}
-		info, err := lib.IPRegion.Find(c.Query("ip"))
-		if err != nil {
-			c.JSON(http.StatusForbidden, bind.Message{Message: err.Error()})
-			return
-		}
-		var names []string
-		for a := &info.Area; a != nil && a.Name != ""; a = a.Parent {
-			names = append(names, a.Name)
-		}
-		for i, j := 0, len(names)-1; i < j; i, j = i+1, j-1 {
-			names[i], names[j] = names[j], names[i]
-		}
-		for len(names) < 4 {
-			names = append(names, "")
-		}
-		reqRegion := model.IPRegion{
-			Country:  names[0],
-			Province: names[1],
-			City:     names[2],
-			County:   names[3],
-			ISP:      info.ISP.Name,
-		}
+	}
+	if len(ipStruct.Region) > 0 {
 		for _, region := range ipStruct.Region {
-			if region.Country != "" && region.Country != reqRegion.Country { // 国家
-				continue
+			leaf := region.Country
+			if region.Province != "" {
+				leaf = region.Province
 			}
-			if region.Province != "" && region.Province != reqRegion.Province { // 省份
-				continue
+			if region.City != "" {
+				leaf = region.City
 			}
-			if region.City != "" && region.City != reqRegion.City { // 城市
-				continue
+			if region.County != "" {
+				leaf = region.County
 			}
-			if region.County != "" && region.County != reqRegion.County { // 县级
+			if leaf != "" && leaf != areaName {
 				continue
 			}
 			// 如果匹配到允许则是允许拒绝则是拒绝。
 			if ipStruct.Allowed { // 如果能匹配到任意一条规则，则根据 Allowed 返回
 				c.JSON(http.StatusOK, bind.Message{Message: "ok"})
 			} else {
-				c.JSON(http.StatusForbidden, gin.H{"region": reqRegion})
+				c.JSON(http.StatusForbidden, gin.H{"region": areaName, "ip": ip, "isp": ispName})
 			}
 			return
 		}
@@ -80,6 +74,11 @@ func HandleIpVerify(c *gin.Context) {
 	if !ipStruct.Allowed { // 如果能匹配到任意一条规则，则根据 Allowed 返回
 		c.JSON(http.StatusOK, bind.Message{Message: "ok"})
 	} else {
-		c.JSON(http.StatusForbidden, gin.H{"region": "deny"})
+		c.JSON(http.StatusForbidden, gin.H{
+			"region": "deny",
+			"ip":     ip,
+			"area":   areaName,
+			"isp":    ispName,
+		})
 	}
 }

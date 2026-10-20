@@ -50,32 +50,66 @@ func (m *Cert) ParseCertInfo() error {
 	return nil
 }
 
-func dnsNameCovers(pattern, host string) bool {
-	pattern = strings.ToLower(strings.TrimSpace(pattern))
-	host = strings.ToLower(strings.TrimSpace(host))
-	if pattern == "" || host == "" {
-		return false
+func (m *Cert) Normalize() error {
+	m.Domain = strings.TrimPrefix(strings.ToLower(strings.TrimSpace(m.Domain)), "*.")
+	if m.Domain == "" || strings.Contains(m.Domain, "*") || strings.ContainsAny(m.Domain, " /") {
+		return errors.New("请填写域名，例如 example.com")
 	}
-	if pattern == host {
-		return true
+	if m.PublicKey == "" {
+		return nil
 	}
-	if !strings.HasPrefix(pattern, "*.") || strings.HasPrefix(host, "*.") {
-		return false
+	if len(m.CertInfo.DNSNames) == 0 {
+		return errors.New("证书没有域名")
 	}
-	suffix := pattern[1:]
-	if !strings.HasSuffix(host, suffix) {
-		return false
+	apex := m.Domain
+	wild := "*." + apex
+	for _, name := range m.CertInfo.DNSNames {
+		name = strings.ToLower(name)
+		if name != apex && name != wild {
+			return errors.New("证书只能包含域名，或再加它的泛解析")
+		}
 	}
-	label := strings.TrimSuffix(host, suffix)
-	return label != "" && !strings.Contains(label, ".")
+	if !m.Wildcard {
+		for _, name := range m.CertInfo.DNSNames {
+			if strings.EqualFold(name, wild) {
+				return errors.New("证书含有泛解析，请打开泛解析")
+			}
+		}
+		return nil
+	}
+	for _, name := range m.CertInfo.DNSNames {
+		if strings.EqualFold(name, wild) {
+			return nil
+		}
+	}
+	return errors.New("证书未包含 " + wild)
 }
 
 func (m *Cert) covers(host string) bool {
 	if err := m.ParseCertInfo(); err != nil {
 		return false
 	}
-	for _, name := range m.CertInfo.DNSNames {
-		if dnsNameCovers(name, host) {
+	host = strings.ToLower(strings.TrimSpace(host))
+	if host == "" {
+		return false
+	}
+	for _, pattern := range m.CertInfo.DNSNames {
+		pattern = strings.ToLower(strings.TrimSpace(pattern))
+		if pattern == "" {
+			continue
+		}
+		if pattern == host {
+			return true
+		}
+		if !strings.HasPrefix(pattern, "*.") || strings.HasPrefix(host, "*.") {
+			continue
+		}
+		suffix := pattern[1:]
+		if !strings.HasSuffix(host, suffix) {
+			continue
+		}
+		label := strings.TrimSuffix(host, suffix)
+		if label != "" && !strings.Contains(label, ".") {
 			return true
 		}
 	}

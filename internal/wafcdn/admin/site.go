@@ -14,16 +14,13 @@ import (
 	"github.com/penndev/galite/internal/wafcdn/model"
 )
 
-func ensureSiteStaticDir(site *model.Site) error {
-	if site.Type != "static" {
-		return nil
-	}
-	root := strings.Trim(strings.ReplaceAll(strings.TrimSpace(site.Static.Root), "\\", "/"), "/")
+func ensureSiteDir(site *model.Site) error {
+	root := strings.Trim(strings.ReplaceAll(strings.TrimSpace(site.Root), "\\", "/"), "/")
 	if root == "" {
-		return errors.New("请填写静态站点目录名")
+		return errors.New("请填写站点目录")
 	}
-	site.Static.Root = root
-	if err := normalizeStaticLocations(site); err != nil {
+	site.Root = root
+	if err := normalizeLocations(site); err != nil {
 		return err
 	}
 	abs, err := FilesResolve(root)
@@ -33,19 +30,15 @@ func ensureSiteStaticDir(site *model.Site) error {
 	return os.MkdirAll(abs, 0755)
 }
 
-func normalizeStaticLocations(site *model.Site) error {
+func normalizeLocations(site *model.Site) error {
 	seen := map[string]struct{}{}
-	for i := range site.Static.Locations {
-		loc := &site.Static.Locations[i]
+	for i := range site.Locations {
+		loc := &site.Locations[i]
 		path := strings.TrimSpace(loc.Path)
-		if path == "" {
-			return errors.New("路径不能为空")
+		if path != "/" {
+			path = strings.TrimRight(path, "/")
 		}
-		if !strings.HasPrefix(path, "/") {
-			return errors.New("路径必须以 / 开头")
-		}
-		path = strings.TrimRight(path, "/")
-		if path == "" || strings.Contains(path, "..") || strings.Contains(path, "//") || strings.Contains(path, "?") || strings.Contains(path, "#") || strings.Contains(path, "\\") {
+		if path == "" || !strings.HasPrefix(path, "/") || strings.Contains(path, "..") || strings.Contains(path, "//") || strings.Contains(path, "?") || strings.Contains(path, "#") || strings.Contains(path, "\\") {
 			return errors.New("路径不合法")
 		}
 		if _, ok := seen[path]; ok {
@@ -54,13 +47,48 @@ func normalizeStaticLocations(site *model.Site) error {
 		seen[path] = struct{}{}
 		loc.Path = path
 
-		server, err := normalizeProxyServer(loc.Proxy.Server)
-		if err != nil {
-			return errors.New("路径 " + path + " 的" + err.Error())
+		switch loc.Action {
+		case "proxy":
+			if loc.Proxy == nil {
+				return errors.New("路径 " + path + " 的反代地址必须是 http(s)://主机:端口，路径可选")
+			}
+			server, err := normalizeProxyServer(loc.Proxy.Server)
+			if err != nil {
+				return errors.New("路径 " + path + " 的" + err.Error())
+			}
+			loc.Proxy.Server = server
+			loc.Redirect = ""
+			loc.Code = 0
+		case "redirect":
+			target, err := normalizeRedirect(loc.Redirect)
+			if err != nil {
+				return errors.New("路径 " + path + " 的" + err.Error())
+			}
+			loc.Redirect = target
+			if loc.Code != 301 {
+				loc.Code = 302
+			}
+			loc.Proxy = nil
+		default:
+			return errors.New("路径 " + path + " 的处理方式不正确")
 		}
-		loc.Proxy.Server = server
 	}
 	return nil
+}
+
+func normalizeRedirect(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if strings.HasPrefix(raw, "/") && !strings.HasPrefix(raw, "//") {
+		if strings.Contains(raw, "..") || strings.Contains(raw, "\\") {
+			return "", errors.New("重定向路径不合法")
+		}
+		return raw, nil
+	}
+	parsed, err := url.Parse(raw)
+	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
+		return "", errors.New("重定向地址必须是 http(s)://主机 或 /路径")
+	}
+	return raw, nil
 }
 
 func normalizeProxyServer(server string) (string, error) {
@@ -71,25 +99,16 @@ func normalizeProxyServer(server string) (string, error) {
 	if parsed.RawQuery != "" || parsed.Fragment != "" {
 		return "", errors.New("反代地址不能带参数")
 	}
-	path := strings.TrimRight(parsed.EscapedPath(), "/")
-	if path == "/" || path == "" {
-		path = ""
-	} else if !strings.HasPrefix(path, "/") || strings.Contains(path, "..") {
-		return "", errors.New("反代路径不合法")
+	path := parsed.EscapedPath()
+	if path == "/" {
+		// 单独的 / 表示换掉站点路径前缀
+	} else if path != "" {
+		path = strings.TrimRight(path, "/")
+		if path == "" || !strings.HasPrefix(path, "/") || strings.Contains(path, "..") {
+			return "", errors.New("反代路径不合法")
+		}
 	}
 	return parsed.Scheme + "://" + parsed.Host + path, nil
-}
-
-func normalizeSiteProxy(site *model.Site) error {
-	if site.Type != "proxy" {
-		return nil
-	}
-	server, err := normalizeProxyServer(site.Proxy.Server)
-	if err != nil {
-		return err
-	}
-	site.Proxy.Server = server
-	return nil
 }
 
 // 添加新的站点
@@ -100,11 +119,7 @@ func SiteAdd(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
-	if err := ensureSiteStaticDir(param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
-		return
-	}
-	if err := normalizeSiteProxy(param); err != nil {
+	if err := ensureSiteDir(param); err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
 		return
 	}
@@ -137,15 +152,11 @@ func SiteUpdate(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "参数错误" + err.Error()})
 		return
 	}
-	if err := ensureSiteStaticDir(param); err != nil {
+	if err := ensureSiteDir(param); err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
 		return
 	}
-	if err := normalizeSiteProxy(param); err != nil {
-		c.JSON(http.StatusBadRequest, bind.Message{Message: err.Error()})
-		return
-	}
-	if err := param.DB().Updates(param).Error; err != nil {
+	if err := param.DB().Model(param).Select("remark", "root", "locations", "security", "header").Updates(param).Error; err != nil {
 		c.JSON(http.StatusBadRequest, bind.Message{Message: "更新失败(" + err.Error() + ")"})
 		return
 	}

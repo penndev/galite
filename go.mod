@@ -12,7 +12,6 @@ require (
 	github.com/redis/go-redis/v9 v9.11.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/crypto v0.41.0
-	golang.org/x/net v0.42.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gorm.io/driver/mysql v1.6.0
 	gorm.io/driver/postgres v1.6.0
@@ -25,6 +24,7 @@ require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
+	golang.org/x/net v0.42.0 // indirect
 )
 
 require (
